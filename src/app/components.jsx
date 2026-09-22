@@ -93,6 +93,22 @@ export function Servico({ nome, valor, cores }) {
   );
 }
 
+export function ComposicaoEmpilhada({ dados }) {
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={dados} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+        <XAxis dataKey="nome" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Bar dataKey="naoSus" name="Leitos não SUS" stackId="a" fill="#f2b705" />
+        <Bar dataKey="sus" name="Leitos SUS" stackId="a" fill="#159957" />
+        <Bar dataKey="complementares" name="Complementares" stackId="a" fill="#8f1d24" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 export function Card({ children, className = "" }) {
   return (
     <div

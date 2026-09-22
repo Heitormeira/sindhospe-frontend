@@ -8,6 +8,7 @@ const ABAS = [
   { href: "/dashboard", label: "Meu estabelecimento" },
   { href: "/mercado", label: "Mercado" },
   { href: "/evolucao", label: "Evolução" },
+  { href: "/relatorio", label: "Relatório" },
   { href: "/demo", label: "Demonstração" },
 ];
 
@@ -24,7 +25,7 @@ export default function NavClient() {
           <img src="/logo-sindhospe.png" alt="SINDHOSPE" className="h-16 w-auto" />
         </div>
       </div>
-      <nav className="flex items-center justify-center gap-1 bg-black/10 rounded-lg p-1">
+      <nav className="flex items-center justify-center gap-1 bg-black/10 rounded-lg p-1 flex-wrap">
         {ABAS.map((aba) => {
           const ativa = pathname === aba.href;
           return (
@@ -36,6 +37,7 @@ export default function NavClient() {
                 background: ativa ? "white" : "transparent",
                 color: ativa ? CORES.verdeEscuro : "white",
                 fontWeight: ativa ? 600 : 400,
+                minWidth: "90px",
               }}
             >
               {aba.label}
