@@ -2,7 +2,7 @@
 
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid, Legend } from "recharts";
 
-export const API_URL = "http://localhost:3001";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // Paleta extraída da logo do SINDHOSPE (Saúde+PE)
 export const CORES = {
