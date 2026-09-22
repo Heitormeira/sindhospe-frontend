@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { API_URL, CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../components";
+import { mensagemAmigavel } from "../api-error";
 
 export default function EvolucaoPage() {
   const [estabelecimentos, setEstabelecimentos] = useState([]);
@@ -22,7 +23,7 @@ export default function EvolucaoPage() {
           setNomeSelecionado(lista[0].nome_fantasia);
         }
       })
-      .catch((e) => setErro(`Não foi possível carregar a lista: ${e.message}`));
+      .catch((e) => setErro(mensagemAmigavel(e)));
   }, []);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function EvolucaoPage() {
         if (!Array.isArray(json)) throw new Error(json?.mensagem || "Resposta inesperada.");
         setSerie(json);
       })
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [cnesSelecionado]);
 

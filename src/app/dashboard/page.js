@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { API_URL, CORES, ComparativoBarras, Servico, Card, CardTitle, Insight } from "../components";
+import { mensagemAmigavel } from "../api-error";
 
 export default function DashboardPage() {
   const [estabelecimentos, setEstabelecimentos] = useState([]);
@@ -18,7 +19,7 @@ export default function DashboardPage() {
         setEstabelecimentos(lista);
         if (lista.length > 0) setCnesSelecionado(lista[0].cnes);
       })
-      .catch((e) => setErro(`Não foi possível carregar a lista de estabelecimentos: ${e.message}`));
+      .catch((e) => setErro(mensagemAmigavel(e)));
   }, []);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function DashboardPage() {
         return r.json();
       })
       .then((json) => setDados(json))
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [cnesSelecionado]);
 

@@ -8,6 +8,7 @@ const ABAS = [
   { href: "/dashboard", label: "Meu estabelecimento" },
   { href: "/mercado", label: "Mercado" },
   { href: "/evolucao", label: "Evolução" },
+  { href: "/demo", label: "Demonstração" },
 ];
 
 export default function NavClient() {

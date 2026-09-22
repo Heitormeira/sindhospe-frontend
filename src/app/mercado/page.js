@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { API_URL, CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../components";
+import { mensagemAmigavel } from "../api-error";
 
 export default function MercadoPage() {
   const [municipios, setMunicipios] = useState([]);
@@ -28,7 +29,7 @@ export default function MercadoPage() {
         setMunicipioSelecionado(recife ? recife.codufmun : listaMun[0]?.codufmun || "");
         setTipoSelecionado(listaTipos[0]?.codigo || "");
       })
-      .catch((e) => setErro(`Não foi possível carregar municípios/tipos: ${e.message}`));
+      .catch((e) => setErro(mensagemAmigavel(e)));
   }, []);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function MercadoPage() {
         if (!Array.isArray(json)) throw new Error(json?.mensagem || "Resposta inesperada.");
         setSerie(json);
       })
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [municipioSelecionado, tipoSelecionado]);
 
