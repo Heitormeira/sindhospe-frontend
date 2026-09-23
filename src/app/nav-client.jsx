@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CORES } from "./components";
 
 const ABAS = [
+  { href: "/visao-geral", label: "Visão Geral" },
   { href: "/dashboard", label: "Meu estabelecimento" },
   { href: "/mercado", label: "Mercado" },
   { href: "/evolucao", label: "Evolução" },
