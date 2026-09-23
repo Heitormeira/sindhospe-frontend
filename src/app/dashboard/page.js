@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { API_URL, CORES, ComparativoBarras, Servico, Card, CardTitle, Insight } from "../components";
-import { mensagemAmigavel } from "../api-error";
 
 export default function DashboardPage() {
   const [estabelecimentos, setEstabelecimentos] = useState([]);
@@ -19,7 +18,7 @@ export default function DashboardPage() {
         setEstabelecimentos(lista);
         if (lista.length > 0) setCnesSelecionado(lista[0].cnes);
       })
-      .catch((e) => setErro(mensagemAmigavel(e)));
+      .catch((e) => setErro(`Não foi possível carregar a lista de estabelecimentos: ${e.message}`));
   }, []);
 
   useEffect(() => {
@@ -32,12 +31,14 @@ export default function DashboardPage() {
         return r.json();
       })
       .then((json) => setDados(json))
-      .catch((e) => setErro(mensagemAmigavel(e)))
+      .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false));
   }, [cnesSelecionado]);
 
+  const temDadosCnes = dados && dados.estrutura !== null;
+
   const semLeitosAplicavel =
-    dados && dados.estrutura.leitos_totais === 0 && parseFloat(dados.comparativo.estado.media_leitos) < 1;
+    temDadosCnes && dados.estrutura.leitos_totais === 0 && parseFloat(dados.comparativo.estado.media_leitos) < 1;
 
   return (
     <div>
@@ -75,7 +76,9 @@ export default function DashboardPage() {
                 <p className="text-xs mb-0.5" style={{ color: CORES.verde }}>Meu estabelecimento</p>
                 <p className="text-lg font-semibold text-gray-900">{dados.identidade.nome_fantasia}</p>
                 <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                  CNES {dados.identidade.cnes} &middot; {dados.estrutura.municipio_nome}/PE<br />
+                  {temDadosCnes ? (
+                    <>CNES {dados.identidade.cnes} &middot; {dados.estrutura.municipio_nome}/PE<br /></>
+                  ) : null}
                   CNPJ {dados.identidade.cnpj}<br />
                   Registro SINDHOSPE nº {dados.identidade.registro}
                 </p>
@@ -89,6 +92,8 @@ export default function DashboardPage() {
             </div>
           </Card>
 
+          {temDadosCnes ? (
+          <>
           <Card>
             <CardTitle>Capacidade física — leitos totais</CardTitle>
             {semLeitosAplicavel ? (
@@ -178,6 +183,16 @@ export default function DashboardPage() {
               <Servico nome="Atendimento ambulatorial" valor={dados.estrutura.tem_atend_ambulatorial} cores={CORES} />
             </ul>
           </Card>
+          </>
+          ) : (
+            <Card>
+              <p className="text-sm text-gray-600">
+                Este associado não possui estabelecimento de saúde cadastrado no CNES (código próprio) —
+                provavelmente uma empresa prestadora de serviço ao setor (consultoria, locação, higienização,
+                etc.), sem indicadores estruturais aplicáveis.
+              </p>
+            </Card>
+          )}
         </>
       )}
 
