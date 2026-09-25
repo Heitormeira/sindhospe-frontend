@@ -8,9 +8,11 @@ import { CORES, getSessao, limparSessao } from "./components";
 const ABAS = [
   { href: "/visao-geral", label: "Visão Geral" },
   { href: "/dashboard", label: "Meu estabelecimento" },
+  { href: "/perfil", label: "Perfil" },
   { href: "/mercado", label: "Mercado" },
   { href: "/evolucao", label: "Evolução" },
   { href: "/relatorio", label: "Relatório" },
+  { href: "/status", label: "Status do projeto" },
   { href: "/demo", label: "Demonstração" },
 ];
 
