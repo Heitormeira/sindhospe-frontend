@@ -122,7 +122,7 @@ export default function DashboardPage() {
                       dados={[
                         { nome: "Você", valor: dados.estrutura.leitos_totais, cor: CORES.verdeEscuro },
                         { nome: "Município", valor: parseFloat(dados.comparativo.municipio.media_leitos), cor: CORES.verde },
-                        { nome: "Pernambuco", valor: parseFloat(dados.comparativo.estado.media_leitos), cor: CORES.vermelho },
+                        { nome: "Pernambuco", valor: parseFloat(dados.comparativo.estado.media_leitos), cor: CORES.neutro },
                       ]}
                     />
                     <p className="text-xs text-gray-400 mt-2">
@@ -140,7 +140,7 @@ export default function DashboardPage() {
                           dados={[
                             { nome: "Você", valor: dados.estrutura.leitos_complementares, cor: CORES.verdeEscuro },
                             { nome: "Município", valor: parseFloat(dados.comparativo.municipio.media_complementares), cor: CORES.verde },
-                            { nome: "Pernambuco", valor: parseFloat(dados.comparativo.estado.media_complementares), cor: CORES.vermelho },
+                            { nome: "Pernambuco", valor: parseFloat(dados.comparativo.estado.media_complementares), cor: CORES.neutro },
                           ]}
                         />
                         <Insight tipo="complementares" valor={dados.estrutura.leitos_complementares} media={dados.comparativo.estado.media_complementares} />

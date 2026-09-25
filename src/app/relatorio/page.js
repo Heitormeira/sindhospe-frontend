@@ -224,7 +224,7 @@ export default function RelatorioPage() {
               linhas={[
                 { dataKey: "voce", nome: "Você", cor: CORES.verdeEscuro },
                 { dataKey: "municipio", nome: "Média município", cor: CORES.verde },
-                { dataKey: "estado", nome: "Média Pernambuco", cor: CORES.vermelho },
+                { dataKey: "estado", nome: "Média Pernambuco", cor: CORES.neutro },
               ]}
             />
           </Card>

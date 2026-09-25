@@ -12,6 +12,7 @@ export const CORES = {
   vermelho: "#8f1d24",
   vermelhoClaro: "#fbe9ea",
   dourado: "#f2b705",
+  neutro: "#4b5f57", // verde-acinzentado, usado no lugar de vermelho em comparativos neutros
 };
 
 // Converte "202406" -> "Jun/24"
@@ -101,9 +102,9 @@ export function ComposicaoEmpilhada({ dados }) {
         <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
         <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="naoSus" name="Leitos não SUS" stackId="a" fill="#f2b705" />
-        <Bar dataKey="sus" name="Leitos SUS" stackId="a" fill="#159957" />
-        <Bar dataKey="complementares" name="Complementares" stackId="a" fill="#8f1d24" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="naoSus" name="Leitos não SUS" stackId="a" fill={CORES.dourado} />
+        <Bar dataKey="sus" name="Leitos SUS" stackId="a" fill={CORES.verde} />
+        <Bar dataKey="complementares" name="Complementares" stackId="a" fill={CORES.verdeEscuro} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

@@ -18,15 +18,15 @@ export default function NavClient() {
 
   return (
     <header
-      className="rounded-xl px-4 py-4 mb-4 shadow-sm"
+      className="rounded-xl px-4 py-5 mb-4 shadow-sm"
       style={{ background: `linear-gradient(135deg, ${CORES.verdeEscuro}, ${CORES.verde})` }}
     >
-      <div className="flex items-center justify-center mb-3">
-        <div className="bg-white rounded-lg px-4 py-2 shadow-sm">
-          <img src="/logo-sindhospe.png" alt="SINDHOSPE" className="h-16 w-auto" />
+      <div className="flex items-center justify-center mb-4">
+        <div className="bg-white rounded-xl px-6 py-3 shadow-sm">
+          <img src="/logo-sindhospe.png" alt="SINDHOSPE" className="h-24 w-auto" />
         </div>
       </div>
-      <nav className="flex items-center justify-center gap-1 bg-black/10 rounded-lg p-1 flex-wrap">
+      <nav className="flex items-center justify-center gap-1 bg-white/10 rounded-lg p-1 flex-wrap">
         {ABAS.map((aba) => {
           const ativa = pathname === aba.href;
           return (
