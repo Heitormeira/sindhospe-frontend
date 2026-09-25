@@ -58,20 +58,6 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-xs text-gray-500">Você está logado como</p>
-          <p className="text-sm font-semibold text-gray-900">{sessao.nome}</p>
-        </div>
-        <button
-          onClick={sair}
-          className="text-xs font-semibold px-3 py-1.5 rounded-md border"
-          style={{ color: CORES.vermelho, borderColor: `${CORES.vermelho}44` }}
-        >
-          Sair
-        </button>
-      </div>
-
       {erro && (
         <div
           className="text-sm rounded-lg px-4 py-3 mb-4"
