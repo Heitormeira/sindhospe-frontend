@@ -13,15 +13,19 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelL
 
 export default function VisaoGeralPage() {
   const [dados, setDados] = useState(null);
+  const [representatividade, setRepresentatividade] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/api/visao-geral`)
-      .then((r) => r.json())
-      .then((json) => {
-        if (json?.mensagem && !json.evolucao_total) throw new Error(json.mensagem);
-        setDados(json);
+    Promise.all([
+      fetch(`${API_URL}/api/visao-geral`).then((r) => r.json()),
+      fetch(`${API_URL}/api/representatividade`).then((r) => r.json()),
+    ])
+      .then(([visaoGeral, repr]) => {
+        if (visaoGeral?.mensagem && !visaoGeral.evolucao_total) throw new Error(visaoGeral.mensagem);
+        setDados(visaoGeral);
+        setRepresentatividade(repr);
       })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false));
@@ -56,6 +60,35 @@ export default function VisaoGeralPage() {
               ({formatCompetencia(primeira?.competencia)} a {formatCompetencia(ultima?.competencia)}).
             </p>
           </Card>
+
+          {representatividade && (
+            <div
+              className="rounded-xl px-5 py-6 mb-4 shadow-sm text-center"
+              style={{ background: `linear-gradient(135deg, ${CORES.verdeEscuro}, ${CORES.verde})` }}
+            >
+              <p className="text-xs text-white/80 uppercase tracking-wide mb-1">Poder de representação do SINDHOSPE</p>
+              <p className="text-5xl font-bold text-white mb-1">
+                {representatividade.percentual_leitos_representados}%
+              </p>
+              <p className="text-sm text-white/90">
+                dos leitos hospitalares de Pernambuco estão em estabelecimentos associados ao SINDHOSPE
+              </p>
+              <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-white/20">
+                <div>
+                  <p className="text-xl font-bold text-white">{representatividade.total_associados_filiados}</p>
+                  <p className="text-xs text-white/80">associados filiados</p>
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-white">{representatividade.leitos_associados.toLocaleString("pt-BR")}</p>
+                  <p className="text-xs text-white/80">leitos representados</p>
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-white">{representatividade.estabelecimentos_associados_no_cnes}</p>
+                  <p className="text-xs text-white/80">estabelecimentos no CNES</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
