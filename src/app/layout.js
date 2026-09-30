@@ -10,10 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
       <body style={{ background: "#e6f5ee", margin: 0 }}>
-        <div style={{ maxWidth: 672, margin: "0 auto", padding: "1.25rem 1rem 3rem" }}>
-          <NavClient />
-          {children}
-        </div>
+        <NavClient>{children}</NavClient>
       </body>
     </html>
   );

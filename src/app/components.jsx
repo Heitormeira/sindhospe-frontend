@@ -88,8 +88,8 @@ export function Servico({ nome, valor, cores }) {
   }
   return (
     <li className="flex items-center justify-between py-2.5">
-      <span className="text-gray-700">{nome}</span>
-      <span className="text-xs font-semibold" style={{ color: cor }}>{texto}</span>
+      <span className="text-[#0b4a34] text-sm">{nome}</span>
+      <span className="text-sm font-semibold" style={{ color: cor }}>{texto}</span>
     </li>
   );
 }
@@ -139,6 +139,9 @@ export function limparSessao() {
   }
 }
 
+// Mantido por compatibilidade — não é mais usado pela tela de login atual
+// (que agora busca no servidor em vez de comparar contra uma lista
+// completa baixada no navegador), mas outro código pode depender dele.
 export function validarLogin(nomeDigitado, senhaDigitada, listaEstabelecimentos) {
   if (senhaDigitada !== SENHA_DEMO) {
     return { ok: false, erro: "Senha incorreta." };
@@ -153,11 +156,13 @@ export function validarLogin(nomeDigitado, senhaDigitada, listaEstabelecimentos)
   return { ok: true, cnes: encontrado.cnes, nome: encontrado.nome_fantasia };
 }
 
+// Card institucional: fundo branco, borda suave, cantos de 12px, respiro de
+// 24px — sem sombras pesadas (direção "portal institucional", não "dashboard
+// de startup").
 export function Card({ children, className = "" }) {
   return (
     <div
-      className={`bg-white rounded-xl px-5 py-4 mb-4 shadow-sm border ${className}`}
-      style={{ borderColor: `${CORES.verde}22` }}
+      className={`bg-white rounded-xl px-6 py-6 mb-4 shadow-sm border border-[#d6e8e0] ${className}`}
     >
       {children}
     </div>
@@ -166,7 +171,7 @@ export function Card({ children, className = "" }) {
 
 export function CardTitle({ children }) {
   return (
-    <h2 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: CORES.verde }}>
+    <h2 className="text-lg font-semibold mb-3" style={{ color: CORES.verdeEscuro }}>
       {children}
     </h2>
   );
@@ -207,13 +212,22 @@ export function Insight({ tipo, valor, media }) {
 
   const textos = TEXTOS[tipo];
   const texto = neutro ? textos.neutro : acima ? textos.acima : textos.abaixo;
-  const cor = neutro ? "#6b7280" : acima ? CORES.verdeEscuro : "#8a6a00";
-  const bg = neutro ? "#f3f4f6" : acima ? CORES.verdeClaro : `${CORES.dourado}18`;
+
+  // Linguagem visual única (fundo verde claro + texto verde escuro, igual em
+  // todo o portal) com só a borda esquerda mudando de cor pra sinalizar o
+  // tipo de leitura — mais institucional que trocar o fundo inteiro de cor.
+  const borda = neutro ? CORES.neutro : acima ? CORES.verde : CORES.dourado;
+  const rotulo = neutro ? "Estável" : acima ? "Ponto forte" : "Atenção";
 
   return (
-    <div className="mt-3 rounded-lg px-3 py-2.5 text-sm flex gap-2" style={{ background: bg, color: cor }}>
-      <span>{neutro ? "➡️" : acima ? "💡" : "⚠️"}</span>
-      <span>{texto}</span>
+    <div
+      className="mt-3 rounded-lg pl-4 pr-4 py-3 text-sm border-l-4"
+      style={{ background: CORES.verdeClaro, borderColor: borda, color: CORES.verdeEscuro }}
+    >
+      <p className="text-sm font-semibold uppercase tracking-wide mb-1" style={{ color: borda }}>
+        {rotulo}
+      </p>
+      <p>{texto}</p>
     </div>
   );
 }

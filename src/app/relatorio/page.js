@@ -9,6 +9,7 @@ import {
   Card,
   CardTitle,
   formatCompetencia,
+  getSessao,
 } from "../components";
 
 const PONTOS_POR_JANELA = { 6: 3, 12: 5, 24: 9 };
@@ -23,7 +24,6 @@ function variacao(serieJanela, campo) {
 }
 
 export default function RelatorioPage() {
-  const [estabelecimentos, setEstabelecimentos] = useState([]);
   const [cnesSelecionado, setCnesSelecionado] = useState("");
   const [nome, setNome] = useState("");
   const [dadosBase, setDadosBase] = useState(null);
@@ -34,18 +34,18 @@ export default function RelatorioPage() {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
 
+  // O relatório é sempre do estabelecimento logado — nunca de outro
+  // associado. Antes esta página baixava a lista completa de associados
+  // só pra popular um seletor, e isso deixava ver o relatório de
+  // qualquer um. Agora usamos direto o que está salvo na sessão.
   useEffect(() => {
-    fetch(`${API_URL}/api/estabelecimentos`)
-      .then((r) => r.json())
-      .then((lista) => {
-        if (!Array.isArray(lista)) throw new Error(lista?.mensagem || "Resposta inesperada.");
-        setEstabelecimentos(lista);
-        if (lista.length > 0) {
-          setCnesSelecionado(lista[0].cnes);
-          setNome(lista[0].nome_fantasia);
-        }
-      })
-      .catch((e) => setErro(`Não foi possível carregar a lista: ${e.message}`));
+    const sessao = getSessao();
+    if (sessao) {
+      setCnesSelecionado(sessao.cnes);
+      setNome(sessao.nome);
+    } else {
+      setErro("Sessão não encontrada. Faça login novamente.");
+    }
   }, []);
 
   useEffect(() => {
@@ -135,50 +135,36 @@ export default function RelatorioPage() {
 
   return (
     <div>
-      <div className="mb-4">
-        <label className="text-xs text-gray-500 block mb-1">Relatório de</label>
-        <select
-          className="w-full text-sm rounded-lg px-3 py-2 bg-white text-gray-900 border border-gray-200 shadow-sm"
-          value={cnesSelecionado}
-          onChange={(e) => {
-            setCnesSelecionado(e.target.value);
-            const est = estabelecimentos.find((x) => x.cnes === e.target.value);
-            setNome(est?.nome_fantasia || "");
-          }}
-        >
-          {estabelecimentos.map((e) => (
-            <option key={e.cnes} value={e.cnes}>{e.nome_fantasia}</option>
-          ))}
-        </select>
+      <div className="mb-6">
+        <p className="text-sm" style={{ color: CORES.neutro }}>Relatório de</p>
+        <p className="text-2xl font-bold" style={{ color: CORES.verdeEscuro }}>{nome || "..."}</p>
       </div>
 
       {erro && (
-        <div className="text-sm rounded-lg px-4 py-3 mb-4" style={{ background: CORES.vermelhoClaro, color: CORES.vermelho }}>
+        <div className="text-sm rounded-lg px-4 py-3 mb-4 border-l-4" style={{ background: CORES.vermelhoClaro, color: CORES.vermelho, borderColor: CORES.vermelho }}>
           {erro}
         </div>
       )}
-      {carregando && <p className="text-sm text-gray-500 px-1">Carregando...</p>}
+      {carregando && <p className="text-sm px-1" style={{ color: CORES.neutro }}>Carregando...</p>}
 
       {dadosBase && janelaVoce && !carregando && (
         <>
           <Card>
             <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
               <div>
-                <p className="text-lg font-semibold text-gray-900">{nome}</p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-sm" style={{ color: CORES.neutro }}>
                   Município: {dadosBase.estrutura.municipio_nome} &middot; Tipo: {dadosBase.estrutura.tp_unid_label}
                 </p>
               </div>
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+              <div className="flex gap-1 rounded-lg p-1" style={{ background: CORES.verdeClaro }}>
                 {[6, 12, 24].map((j) => (
                   <button
                     key={j}
                     onClick={() => setJanela(j)}
-                    className="text-xs px-3 py-1.5 rounded-md transition-colors"
+                    className="text-sm px-3 py-2 min-h-[40px] rounded-md transition-colors font-semibold"
                     style={{
                       background: janela === j ? "white" : "transparent",
-                      fontWeight: janela === j ? 600 : 400,
-                      color: janela === j ? CORES.verdeEscuro : "#6b7280",
+                      color: janela === j ? CORES.verdeEscuro : CORES.neutro,
                       boxShadow: janela === j ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
                     }}
                   >
@@ -187,31 +173,31 @@ export default function RelatorioPage() {
                 ))}
               </div>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-sm" style={{ color: CORES.neutro }}>
               Período analisado: {formatCompetencia(janelaVoce[0]?.competencia)} a {formatCompetencia(janelaVoce[janelaVoce.length - 1]?.competencia)}.
               Tudo calculado a partir de dados reais do CNES/DATASUS.
             </p>
           </Card>
 
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
-              <p className="text-xs text-gray-500 mb-1">Leitos totais</p>
-              <p className="text-2xl font-bold text-gray-900">{kpiTotais.atual}</p>
-              <p className="text-xs mt-1" style={{ color: kpiTotais.variacaoPct >= 0 ? CORES.verde : CORES.vermelho }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div className="bg-white rounded-xl px-5 py-5 shadow-sm border border-[#d6e8e0]">
+              <p className="text-sm mb-1" style={{ color: CORES.neutro }}>Leitos totais</p>
+              <p className="text-[2rem] leading-tight font-bold" style={{ color: CORES.verdeEscuro }}>{kpiTotais.atual}</p>
+              <p className="text-sm mt-1 font-semibold" style={{ color: kpiTotais.variacaoPct >= 0 ? CORES.verde : CORES.vermelho }}>
                 {kpiTotais.variacaoPct >= 0 ? "▲" : "▼"} {Math.abs(kpiTotais.variacaoPct)}% na janela
               </p>
             </div>
-            <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
-              <p className="text-xs text-gray-500 mb-1">Leitos SUS</p>
-              <p className="text-2xl font-bold text-gray-900">{kpiSus.atual}</p>
-              <p className="text-xs mt-1" style={{ color: kpiSus.variacaoPct >= 0 ? CORES.verde : CORES.vermelho }}>
+            <div className="bg-white rounded-xl px-5 py-5 shadow-sm border border-[#d6e8e0]">
+              <p className="text-sm mb-1" style={{ color: CORES.neutro }}>Leitos SUS</p>
+              <p className="text-[2rem] leading-tight font-bold" style={{ color: CORES.verdeEscuro }}>{kpiSus.atual}</p>
+              <p className="text-sm mt-1 font-semibold" style={{ color: kpiSus.variacaoPct >= 0 ? CORES.verde : CORES.vermelho }}>
                 {kpiSus.variacaoPct >= 0 ? "▲" : "▼"} {Math.abs(kpiSus.variacaoPct)}% na janela
               </p>
             </div>
-            <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
-              <p className="text-xs text-gray-500 mb-1">Complementares (UTI etc.)</p>
-              <p className="text-2xl font-bold text-gray-900">{kpiComplementares.atual}</p>
-              <p className="text-xs mt-1" style={{ color: kpiComplementares.variacaoPct >= 0 ? CORES.verde : CORES.vermelho }}>
+            <div className="bg-white rounded-xl px-5 py-5 shadow-sm border border-[#d6e8e0]">
+              <p className="text-sm mb-1" style={{ color: CORES.neutro }}>Complementares (UTI etc.)</p>
+              <p className="text-[2rem] leading-tight font-bold" style={{ color: CORES.verdeEscuro }}>{kpiComplementares.atual}</p>
+              <p className="text-sm mt-1 font-semibold" style={{ color: kpiComplementares.variacaoPct >= 0 ? CORES.verde : CORES.vermelho }}>
                 {kpiComplementares.variacaoPct >= 0 ? "▲" : "▼"} {Math.abs(kpiComplementares.variacaoPct)}% na janela
               </p>
             </div>
@@ -224,7 +210,7 @@ export default function RelatorioPage() {
               linhas={[
                 { dataKey: "voce", nome: "Você", cor: CORES.verdeEscuro },
                 { dataKey: "municipio", nome: "Média município", cor: CORES.verde },
-                { dataKey: "estado", nome: "Média Pernambuco", cor: CORES.neutro },
+                { dataKey: "estado", nome: "Média Pernambuco", cor: CORES.dourado },
               ]}
             />
           </Card>
@@ -236,7 +222,7 @@ export default function RelatorioPage() {
 
           <Card>
             <CardTitle>O que os números dizem</CardTitle>
-            <ul className="text-sm text-gray-700 space-y-2">
+            <ul className="text-sm space-y-3" style={{ color: CORES.verdeEscuro }}>
               <li>
                 💡 Na janela de {janela} meses, seus leitos {kpiTotais.variacaoAbs >= 0 ? "cresceram" : "caíram"}{" "}
                 <strong>{kpiTotais.variacaoAbs >= 0 ? "+" : ""}{kpiTotais.variacaoAbs}</strong>, enquanto a média do

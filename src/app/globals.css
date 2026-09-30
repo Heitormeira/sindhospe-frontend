@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -23,4 +24,44 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+/* =====================================================================
+   Acessibilidade — Portal SINDHOSPE
+   Cole isso no FINAL do seu src/app/globals.css (não substitui nada que
+   já existe, só adiciona). Controla o tamanho de texto e o alto contraste
+   que os botões da barra de acessibilidade (no topo do site) ligam.
+   ===================================================================== */
+
+html {
+  font-size: var(--sindhospe-escala-fonte, 100%);
+}
+
+html[data-contraste="alto"] body {
+  background: #ffffff !important;
+  color: #000000 !important;
+  filter: contrast(1.15) saturate(1.05);
+}
+
+html[data-contraste="alto"] a {
+  text-decoration: underline;
+}
+
+html[data-contraste="alto"] :focus-visible {
+  outline: 3px solid #f2b705 !important;
+  outline-offset: 2px;
+}
+
+html[data-contraste="alto"] button,
+html[data-contraste="alto"] input,
+html[data-contraste="alto"] select,
+html[data-contraste="alto"] textarea {
+  border: 2px solid #000000 !important;
+}
+/* Adicione isso no final do globals.css — é só a parte NOVA (fonte
+   Poppins). A parte de acessibilidade (alto contraste etc.) você já
+   colou da vez passada, não precisa colar de novo. */
+
+
+html, body {
+  font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
