@@ -125,11 +125,11 @@ function ComposicaoLeitos({ totalLeitos, complementares }) {
             className="rounded-full flex-shrink-0"
             style={{ width: 120, height: 120, background: `conic-gradient(${gradiente})` }}
           />
-          <div className="flex flex-col gap-2 text-xs">
+          <div className="flex flex-col gap-2 text-xs" style={{ color: CORES.verdeEscuro }}>
             {fatias.map((f) => (
               <div key={f.nome} className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-sm inline-block flex-shrink-0" style={{ background: f.cor }} />
-                {f.nome} — {f.pct}%
+                <span className="font-medium">{f.nome} — {f.pct}%</span>
               </div>
             ))}
           </div>

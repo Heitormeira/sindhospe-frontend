@@ -45,9 +45,15 @@ export default function LoginPage() {
         const resp = await fetch(
           `${API_URL}/api/estabelecimentos/buscar?q=${encodeURIComponent(termo.trim())}`
         );
+        if (!resp.ok) {
+          console.error("Busca de estabelecimento falhou:", resp.status, await resp.text());
+          setSugestoes([]);
+          return;
+        }
         const dados = await resp.json();
         setSugestoes(Array.isArray(dados) ? dados : []);
-      } catch {
+      } catch (e) {
+        console.error("Erro de rede ao buscar estabelecimento:", e);
         setSugestoes([]);
       } finally {
         setBuscando(false);
@@ -171,7 +177,7 @@ export default function LoginPage() {
                 onChange={(e) => setTermo(e.target.value)}
                 placeholder="Ex.: Hospital Esperança, Clínica..."
                 autoComplete="off"
-                className="w-full text-lg border-2 border-[#bfd5cc] rounded-lg pl-12 pr-4 h-14 focus:outline-none focus:border-[#159957] focus:ring-2 focus:ring-[#e6f5ee]"
+                className="w-full text-lg text-[#0b4a34] placeholder:text-[#9db3aa] border-2 border-[#bfd5cc] rounded-lg pl-12 pr-4 h-14 focus:outline-none focus:border-[#159957] focus:ring-2 focus:ring-[#e6f5ee]"
               />
 
               {termo.trim().length >= 2 && (
@@ -217,7 +223,7 @@ export default function LoginPage() {
               onChange={(e) => setSenha(e.target.value)}
               disabled={!escolhido}
               placeholder="Senha"
-              className="w-full text-lg border-2 border-[#bfd5cc] rounded-lg px-4 h-14 pr-24 focus:outline-none focus:border-[#159957] focus:ring-2 focus:ring-[#e6f5ee] disabled:bg-[#f5f5f5]"
+              className="w-full text-lg text-[#0b4a34] placeholder:text-[#9db3aa] border-2 border-[#bfd5cc] rounded-lg px-4 h-14 pr-24 focus:outline-none focus:border-[#159957] focus:ring-2 focus:ring-[#e6f5ee] disabled:bg-[#f5f5f5]"
             />
             <button
               type="button"
