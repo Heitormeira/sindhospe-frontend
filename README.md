@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Portal SINDHOSPE — Frontend
 
-## Getting Started
+Interface web do **Portal SINDHOSPE**, desenvolvida no Projeto Integrador (UNICAP + SINDHOSPE). Cada associado entra com o próprio estabelecimento e vê indicadores de estrutura (leitos, serviços, habilitações), comparativos com o município e o estado e um relatório de evolução, tudo calculado a partir de dados reais do CNES/DATASUS.
 
-First, run the development server:
+- **Backend (API):** repositório `sindhospe-backend` — https://sindhospe-backend.onrender.com
+- **Hospedagem do frontend:** Vercel
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Equipe
+
+| Aluno | RA |
+|---|---|
+| Heitor Meira | 852542 |
+| Heitor Farias | 853409 |
+| Caio Bandeira | 853860 |
+| Marcelo Caldas | 852309 |
+| Diogo André Ferreira | _a preencher_ |
+
+## Arquitetura
+
+O sistema é dividido em três camadas independentes:
+
+```
+Navegador do usuário
+        ↓
+Frontend — Next.js + Tailwind CSS (Vercel)   ← este repositório
+        ↓  fetch() para a URL definida em NEXT_PUBLIC_API_URL
+Backend — Node.js + Express (Render)
+        ↓  consultas SQL
+Banco de dados — PostgreSQL (Neon)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Camada | Tecnologia | Hospedagem | Função |
+|---|---|---|---|
+| Frontend | Next.js (App Router), React, Tailwind CSS | Vercel | Interface: login, dashboard, relatório e demais abas |
+| Backend | Node.js, Express | Render | API REST: recebe os pedidos, aplica as regras e consulta o banco |
+| Banco | PostgreSQL | Neon | Dados dos associados e dados do CNES/DATASUS |
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+O frontend nunca acessa o banco diretamente: toda informação vem da API do backend.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Telas
 
-## Learn More
+| Rota | Tela |
+|---|---|
+| `/login` | Acesso do associado: busca do estabelecimento pelo nome e senha |
+| `/dashboard` | **Meu estabelecimento:** indicadores em cartões, comparativo com município e estado, composição dos leitos (alternável entre barras e pizza) e perfil de atendimento |
+| `/relatorio` | Relatório do próprio estabelecimento: evolução da capacidade, composição dos leitos e leitura automática dos números |
+| `/visao-geral`, `/mercado`, `/evolucao`, `/perfil` | Demais abas do menu |
 
-To learn more about Next.js, take a look at the following resources:
+## Estrutura do projeto
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+sindhospe-frontend/
+├── public/                  # Arquivos estáticos (logotipo do SINDHOSPE)
+└── src/app/
+    ├── layout.js            # Layout raiz: envolve todas as páginas no NavClient
+    ├── nav-client.jsx       # Barra de acessibilidade, cabeçalho, menu, rodapé e bloqueio de páginas sem login
+    ├── components.jsx       # Cores do SINDHOSPE, URL da API, funções de sessão e componentes reutilizáveis
+    ├── globals.css          # Estilos globais, fonte Poppins e regras de acessibilidade
+    ├── login/page.js
+    ├── dashboard/page.js
+    ├── relatorio/page.js
+    ├── visao-geral/
+    ├── mercado/
+    ├── evolucao/
+    └── perfil/
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Cada pasta dentro de `src/app` vira uma rota do site (roteamento do Next.js App Router).
 
-## Deploy on Vercel
+## Acessibilidade
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Controle de tamanho da fonte (A-, A, A+) e modo de **alto contraste**, salvos no navegador.
+- Link "Pular para o conteúdo" para navegação por teclado.
+- Alvos de clique grandes, tipografia legível e contraste pensado para quem usa o portal no computador.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Segurança e privacidade
+
+- A busca de estabelecimentos é feita **no servidor**: o navegador nunca recebe a lista completa de associados, só os resultados do que foi digitado.
+- O relatório e o dashboard mostram sempre o estabelecimento da sessão logada.
+- **Limitação desta fase de demonstração:** o login usa uma senha única de demonstração e guarda a sessão no `localStorage`, sem token validado pelo servidor. Em uma versão final, cada associado teria login individual.
+
+## Como rodar localmente
+
+Pré-requisito: Node.js.
+
+```bash
+npm install
+npm run dev
+```
+
+Abra http://localhost:3000. O frontend precisa da API rodando: por padrão ele chama `http://localhost:3001` (backend local). Para apontar para outra API, defina a variável de ambiente:
+
+```bash
+NEXT_PUBLIC_API_URL=https://sindhospe-backend.onrender.com
+```
+
+## Deploy na Vercel
+
+1. Conecte este repositório a um projeto na Vercel.
+2. Em **Settings → Environment Variables**, crie `NEXT_PUBLIC_API_URL` com o endereço do backend (`https://sindhospe-backend.onrender.com`, sem barra no final) para o ambiente **Production**.
+3. Faça um **Redeploy**: mudanças de variável de ambiente só entram em vigor em um deploy novo.
+
+Observação: o backend gratuito no Render "dorme" após um tempo sem uso, e a primeira requisição depois disso pode levar cerca de 50 segundos.
