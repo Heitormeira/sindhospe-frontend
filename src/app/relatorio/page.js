@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import {
-  API_URL,
   CORES,
   LinhaEvolucao,
   ComposicaoEmpilhada,
@@ -11,6 +10,8 @@ import {
   formatCompetencia,
   getSessao,
 } from "../components";
+import { getEstabelecimento, getEvolucao, getMercado } from "../dados";
+import { mensagemAmigavel } from "../api-error";
 
 const PONTOS_POR_JANELA = { 6: 3, 12: 5, 24: 9 };
 
@@ -53,22 +54,27 @@ export default function RelatorioPage() {
     setCarregando(true);
     setErro("");
 
-    fetch(`${API_URL}/api/estabelecimento/${cnesSelecionado}`)
-      .then((r) => r.json())
+    getEstabelecimento(cnesSelecionado)
       .then(async (base) => {
-        if (base?.mensagem) throw new Error(base.mensagem);
         setDadosBase(base);
+        // Associado sem estrutura no CNES: não há séries para comparar.
+        if (!base.estrutura) {
+          setSerieVoce([]);
+          setSerieMunicipio([]);
+          setSerieEstado([]);
+          return;
+        }
 
         const [evo, merc, est] = await Promise.all([
-          fetch(`${API_URL}/api/evolucao/${cnesSelecionado}`).then((r) => r.json()),
-          fetch(`${API_URL}/api/mercado?tipo=${base.estrutura.tp_unid}&municipio=${base.estrutura.codufmun}`).then((r) => r.json()),
-          fetch(`${API_URL}/api/mercado?tipo=${base.estrutura.tp_unid}`).then((r) => r.json()),
+          getEvolucao(cnesSelecionado),
+          getMercado(base.estrutura.tp_unid, base.estrutura.codufmun),
+          getMercado(base.estrutura.tp_unid),
         ]);
         setSerieVoce(evo);
         setSerieMunicipio(merc);
         setSerieEstado(est);
       })
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [cnesSelecionado]);
 

@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import {
-  API_URL,
   CORES,
   LinhaEvolucao,
   Card,
   CardTitle,
   formatCompetencia,
 } from "../components";
+import { getVisaoGeral, getRepresentatividade } from "../dados";
+import { mensagemAmigavel } from "../api-error";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 
 export default function VisaoGeralPage() {
@@ -18,16 +19,13 @@ export default function VisaoGeralPage() {
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API_URL}/api/visao-geral`).then((r) => r.json()),
-      fetch(`${API_URL}/api/representatividade`).then((r) => r.json()),
-    ])
+    Promise.all([getVisaoGeral(), getRepresentatividade()])
       .then(([visaoGeral, repr]) => {
-        if (visaoGeral?.mensagem && !visaoGeral.evolucao_total) throw new Error(visaoGeral.mensagem);
+        if (!visaoGeral) throw new Error("Dados da visão geral ainda não foram importados.");
         setDados(visaoGeral);
         setRepresentatividade(repr);
       })
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, []);
 

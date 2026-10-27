@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL, CORES, Card, CardTitle, Servico, getSessao } from "../components";
+import { CORES, Card, CardTitle, Servico, getSessao } from "../components";
+import { getEstabelecimento, solicitarRevisao } from "../dados";
+import { mensagemAmigavel } from "../api-error";
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -26,10 +28,9 @@ export default function PerfilPage() {
   useEffect(() => {
     if (!sessao) return;
     setCarregando(true);
-    fetch(`${API_URL}/api/estabelecimento/${sessao.cnes}`)
-      .then((r) => r.json())
+    getEstabelecimento(sessao.cnes)
       .then((json) => setDados(json))
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [sessao]);
 
@@ -37,14 +38,10 @@ export default function PerfilPage() {
     e.preventDefault();
     setEnviandoRevisao(true);
     try {
-      const r = await fetch(`${API_URL}/api/solicitar-revisao`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cnes: sessao.cnes, nome: sessao.nome, mensagem: mensagemRevisao }),
-      });
-      if (!r.ok) throw new Error("Falha ao enviar.");
+      await solicitarRevisao({ cnes: sessao.cnes, nome: sessao.nome, mensagem: mensagemRevisao });
       setRevisaoEnviada(true);
     } catch (e) {
+      console.error("Solicitação de revisão falhou:", e);
       setErro("Não foi possível enviar a solicitação agora.");
     } finally {
       setEnviandoRevisao(false);

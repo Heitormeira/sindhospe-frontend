@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  API_URL,
   CORES,
   Servico,
   Insight,
   getSessao,
-  limparSessao,
 } from "../components";
+import { getEstabelecimento } from "../dados";
+import { sair as encerrarSessao } from "../sessao";
+import { mensagemAmigavel } from "../api-error";
 
 function formatarNumero(valor) {
   if (valor === null || valor === undefined || Number.isNaN(valor)) return "0";
@@ -164,18 +165,14 @@ export default function DashboardPage() {
     if (!sessao) return;
     setCarregando(true);
     setErro("");
-    fetch(`${API_URL}/api/estabelecimento/${sessao.cnes}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Estabelecimento não encontrado.");
-        return r.json();
-      })
+    getEstabelecimento(sessao.cnes)
       .then((json) => setDados(json))
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [sessao]);
 
-  function sair() {
-    limparSessao();
+  async function sair() {
+    await encerrarSessao();
     router.push("/login");
   }
 
