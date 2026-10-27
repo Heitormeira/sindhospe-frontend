@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL, getSessao, salvarSessao } from "../components";
+import { getSessao } from "../components";
+import { buscarEstabelecimentos } from "../dados";
+import { entrar as entrarNoFirebase } from "../sessao";
+import { mensagemAmigavel } from "../api-error";
 
-// Senha de demonstração da fase atual do projeto — a mesma para todos os
-// associados. Quando o SINDHOSPE aprovar o modelo final, isso entra no
-// lugar de um login real (uma senha por associado).
-const SENHA_DEMO = "12345";
+// Dica opcional exibida abaixo do campo de senha na fase de demonstração
+// (variável de ambiente; vazia = nenhuma dica). A senha em si fica no Firebase Auth.
+const DICA_SENHA_DEMO = process.env.NEXT_PUBLIC_SENHA_DEMO_DICA || "";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,18 +44,10 @@ export default function LoginPage() {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const resp = await fetch(
-          `${API_URL}/api/estabelecimentos/buscar?q=${encodeURIComponent(termo.trim())}`
-        );
-        if (!resp.ok) {
-          console.error("Busca de estabelecimento falhou:", resp.status, await resp.text());
-          setSugestoes([]);
-          return;
-        }
-        const dados = await resp.json();
-        setSugestoes(Array.isArray(dados) ? dados : []);
+        const dados = await buscarEstabelecimentos(termo);
+        setSugestoes(dados);
       } catch (e) {
-        console.error("Erro de rede ao buscar estabelecimento:", e);
+        console.error("Busca de estabelecimento falhou:", e);
         setSugestoes([]);
       } finally {
         setBuscando(false);
@@ -77,7 +71,7 @@ export default function LoginPage() {
     setErro("");
   }
 
-  function entrar(e) {
+  async function entrar(e) {
     e.preventDefault();
     setErro("");
 
@@ -85,14 +79,19 @@ export default function LoginPage() {
       setErro("Selecione o seu estabelecimento na lista antes de continuar.");
       return;
     }
-    if (senha !== SENHA_DEMO) {
-      setErro("Senha incorreta. Confira a senha de demonstração logo abaixo do campo e tente de novo.");
+    if (!senha) {
+      setErro("Digite a sua senha.");
       return;
     }
 
     setEnviando(true);
-    salvarSessao(escolhido.cnes, escolhido.nome_fantasia);
-    router.push("/dashboard");
+    try {
+      await entrarNoFirebase(escolhido.cnes, senha);
+      router.push("/dashboard");
+    } catch (falha) {
+      setErro(mensagemAmigavel(falha));
+      setEnviando(false);
+    }
   }
 
   return (
@@ -234,9 +233,11 @@ export default function LoginPage() {
               {mostrarSenha ? "Ocultar" : "Mostrar"}
             </button>
           </div>
-          <p className="text-sm text-[#4b5f57] mt-2">
-            Fase de demonstração — senha de acesso: <strong>12345</strong>
-          </p>
+          {DICA_SENHA_DEMO && (
+            <p className="text-sm text-[#4b5f57] mt-2">
+              Fase de demonstração — senha de acesso: <strong>{DICA_SENHA_DEMO}</strong>
+            </p>
+          )}
         </div>
 
         {erro && (

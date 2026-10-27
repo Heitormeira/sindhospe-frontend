@@ -1,24 +1,22 @@
 /**
- * Traduz erros de fetch para uma mensagem amigável.
- * Causa mais comum: backend indisponível (local ou na nuvem).
+ * Traduz erros do Firebase (e de rede) para mensagens em português.
  */
-import { API_URL } from "./components";
+const MENSAGENS = {
+  "auth/invalid-credential": "Senha incorreta.",
+  "auth/wrong-password": "Senha incorreta.",
+  "auth/user-not-found": "Senha incorreta.",
+  "auth/invalid-login-credentials": "Senha incorreta.",
+  "auth/user-disabled": "O acesso deste estabelecimento está desativado. Fale com o SINDHOSPE.",
+  "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos.",
+  "auth/network-request-failed": "Não foi possível conectar ao Firebase. Verifique sua internet.",
+  "permission-denied": "Sua sessão não tem acesso a estes dados. Saia e entre novamente.",
+  "unavailable": "Não foi possível conectar ao Firebase. Verifique sua internet.",
+};
 
 export function mensagemAmigavel(erro) {
+  const codigo = String(erro?.code || "").replace(/^firestore\//, "");
+  if (MENSAGENS[codigo]) return MENSAGENS[codigo];
   const msg = String(erro?.message || erro || "");
-  const falhaRede =
-    msg.includes("Failed to fetch") ||
-    msg.includes("NetworkError") ||
-    msg.includes("fetch failed") ||
-    msg.includes("load failed") ||
-    msg.includes("ECONNREFUSED");
-
-  if (falhaRede) {
-    const local = API_URL.includes("localhost");
-    const dica = local
-      ? "Provavelmente o backend não está rodando nesta máquina — inicie-o (veja o projeto do backend/ETL) e recarregue a página."
-      : "O servidor pode estar iniciando (plano gratuito do Render) — aguarde alguns segundos e recarregue a página.";
-    return `Não foi possível conectar ao servidor de dados (API em ${API_URL}). ${dica}`;
-  }
+  if (/Failed to fetch|NetworkError|fetch failed|load failed|offline/i.test(msg)) return MENSAGENS.unavailable;
   return msg || "Erro inesperado ao carregar os dados.";
 }

@@ -2,7 +2,6 @@
 
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid, Legend } from "recharts";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // Paleta extraída da logo do SINDHOSPE (Saúde+PE)
 export const CORES = {
@@ -110,51 +109,9 @@ export function ComposicaoEmpilhada({ dados }) {
   );
 }
 
-// --- Sessão simples (demo) via localStorage: nome do estabelecimento + senha fixa ---
-const CHAVE_SESSAO = "sindhospe_sessao";
-const SENHA_DEMO = "12345";
-
-export function salvarSessao(cnes, nome) {
-  try {
-    localStorage.setItem(CHAVE_SESSAO, JSON.stringify({ cnes, nome }));
-  } catch (e) {
-    console.error("Não foi possível salvar a sessão:", e);
-  }
-}
-
-export function getSessao() {
-  try {
-    const raw = localStorage.getItem(CHAVE_SESSAO);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
-}
-
-export function limparSessao() {
-  try {
-    localStorage.removeItem(CHAVE_SESSAO);
-  } catch (e) {
-    console.error("Não foi possível limpar a sessão:", e);
-  }
-}
-
-// Mantido por compatibilidade — não é mais usado pela tela de login atual
-// (que agora busca no servidor em vez de comparar contra uma lista
-// completa baixada no navegador), mas outro código pode depender dele.
-export function validarLogin(nomeDigitado, senhaDigitada, listaEstabelecimentos) {
-  if (senhaDigitada !== SENHA_DEMO) {
-    return { ok: false, erro: "Senha incorreta." };
-  }
-  const alvo = nomeDigitado.trim().toLowerCase();
-  const encontrado = listaEstabelecimentos.find(
-    (e) => e.nome_fantasia.trim().toLowerCase() === alvo
-  );
-  if (!encontrado) {
-    return { ok: false, erro: "Estabelecimento não encontrado. Digite o nome exatamente como aparece na base do SINDHOSPE." };
-  }
-  return { ok: true, cnes: encontrado.cnes, nome: encontrado.nome_fantasia };
-}
+// Sessão do associado: Firebase Auth (ver sessao.js). Reexportado aqui porque
+// as páginas já importavam getSessao deste módulo.
+export { getSessao } from "./sessao";
 
 // Card institucional: fundo branco, borda suave, cantos de 12px, respiro de
 // 24px — sem sombras pesadas (direção "portal institucional", não "dashboard
