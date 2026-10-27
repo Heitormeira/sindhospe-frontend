@@ -1,23 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planoDeBusca, atendeFiltros, normalizar } from "./busca.mjs";
+import { termoDeBusca, normalizar } from "./busca.mjs";
+
+// Mesmos casos de sindhospe-backend/test/prefixos.test.js (regras precisam bater).
 
 test("termos vazios, curtos ou só pontuação não consultam", () => {
-  for (const q of ["", "h", "  ", "ã", "--", "a b"]) assert.equal(planoDeBusca(q), null, JSON.stringify(q));
+  for (const q of ["", "h", "  ", "ã", "--", " - "]) assert.equal(termoDeBusca(q), null, JSON.stringify(q));
 });
 
-test("palavra mais longa consulta, as demais filtram", () => {
-  assert.deepEqual(planoDeBusca("Hospital Esp"), { consulta: "hospital", filtros: ["esp"] });
-  assert.deepEqual(planoDeBusca("esp hospital"), { consulta: "hospital", filtros: ["esp"] });
+test("várias palavras viram uma frase normalizada", () => {
+  assert.equal(termoDeBusca("Hospital Santa"), "hospital santa");
+  assert.equal(termoDeBusca("hospital  santa jo"), "hospital santa jo");
+  assert.equal(termoDeBusca("SANTA-Jo"), "santa jo");
+  assert.equal(termoDeBusca("a b"), "a b");
 });
 
 test("acentos e caixa são normalizados", () => {
-  assert.deepEqual(planoDeBusca("São"), { consulta: "sao", filtros: [] });
+  assert.equal(termoDeBusca("São"), "sao");
   assert.equal(normalizar("ESPERANÇA"), "esperanca");
-});
-
-test("filtros exigem início de palavra no nome", () => {
-  assert.equal(atendeFiltros("Hospital Esperança", ["esp"]), true);
-  assert.equal(atendeFiltros("Hospital Esperança", ["ran"]), false);
-  assert.equal(atendeFiltros("Hospital Esperança", []), true);
 });

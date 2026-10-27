@@ -22,11 +22,17 @@ export function getSessao() {
 
 async function montarSessao(usuario) {
   if (!usuario) return null;
-  const { claims } = await usuario.getIdTokenResult();
-  const cnes = claims.cnes;
+  let cnes;
+  try {
+    // Pode falhar se o token expirou e não dá para renovar (conta desativada, sem rede).
+    cnes = (await usuario.getIdTokenResult()).claims.cnes;
+  } catch {
+    cnes = null;
+  }
   if (!cnes) {
-    // Conta sem vínculo com associado: não deve existir, mas não deixa entrar.
-    await signOut(obterAuth());
+    // Sem token válido ou conta sem vínculo com associado: sai e volta ao login,
+    // em vez de deixar a tela presa em "Carregando...".
+    await signOut(obterAuth()).catch(() => {});
     return null;
   }
   let nome = cnes;

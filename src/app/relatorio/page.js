@@ -57,11 +57,11 @@ export default function RelatorioPage() {
     getEstabelecimento(cnesSelecionado)
       .then(async (base) => {
         setDadosBase(base);
-        // Associado sem estrutura no CNES: não há séries para comparar.
+        // Associado sem estrutura no CNES: não há séries; a tela mostra um aviso.
         if (!base.estrutura) {
-          setSerieVoce([]);
-          setSerieMunicipio([]);
-          setSerieEstado([]);
+          setSerieVoce(null);
+          setSerieMunicipio(null);
+          setSerieEstado(null);
           return;
         }
 
@@ -111,7 +111,7 @@ export default function RelatorioPage() {
   }, [janelaVoce, janelaMunicipio, janelaEstado]);
 
   const composicaoAtual = useMemo(() => {
-    if (!janelaVoce || !janelaMunicipio || !janelaEstado) return [];
+    if (!janelaVoce?.length || !janelaMunicipio || !janelaEstado) return [];
     const v = janelaVoce[janelaVoce.length - 1];
     const m = janelaMunicipio[janelaMunicipio.length - 1];
     const e = janelaEstado[janelaEstado.length - 1];
@@ -153,7 +153,17 @@ export default function RelatorioPage() {
       )}
       {carregando && <p className="text-sm px-1" style={{ color: CORES.neutro }}>Carregando...</p>}
 
-      {dadosBase && janelaVoce && !carregando && (
+      {dadosBase && !dadosBase.estrutura && !carregando && (
+        <Card>
+          <CardTitle>Sem dados do CNES</CardTitle>
+          <p className="text-sm" style={{ color: CORES.neutro }}>
+            Este associado não tem estrutura cadastrada no CNES/DATASUS (por exemplo, empresas prestadoras de
+            serviço sem estabelecimento de saúde próprio), então não há evolução nem comparativos para exibir.
+          </p>
+        </Card>
+      )}
+
+      {dadosBase?.estrutura && janelaVoce && !carregando && (
         <>
           <Card>
             <div className="flex items-start justify-between flex-wrap gap-3 mb-3">

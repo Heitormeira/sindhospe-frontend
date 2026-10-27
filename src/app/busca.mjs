@@ -1,5 +1,7 @@
 // Regras da busca do login — as mesmas do importador (sindhospe-backend/scripts/prefixos.js):
-// minúsculas, sem acentos, pontuação separa palavras.
+// minúsculas, sem acentos, pontuação separa palavras. O índice guarda os prefixos
+// das frases que começam em cada palavra do nome; aqui o termo digitado vira uma
+// frase no mesmo formato, para um array-contains exato.
 
 export function normalizar(texto) {
   return String(texto || "")
@@ -13,23 +15,8 @@ export function palavras(texto) {
   return normalizar(texto).split(/[^a-z0-9]+/).filter(Boolean);
 }
 
-/**
- * Como consultar o índice `busca`: a palavra mais longa vai para o Firestore
- * (array-contains em `prefixos`), as demais filtram os resultados no navegador.
- * Devolve null quando não há palavra com 2+ letras (não consulta nada).
- */
-export function planoDeBusca(q) {
-  const lista = palavras(q);
-  if (lista.length === 0) return null;
-  const consulta = lista.reduce((maior, p) => (p.length > maior.length ? p : maior), "");
-  if (consulta.length < 2) return null;
-  const filtros = [...lista];
-  filtros.splice(lista.indexOf(consulta), 1);
-  return { consulta, filtros };
-}
-
-/** O nome atende a todos os filtros (cada filtro é início de alguma palavra do nome)? */
-export function atendeFiltros(nome, filtros) {
-  const doNome = palavras(nome);
-  return filtros.every((f) => doNome.some((p) => p.startsWith(f)));
+/** Termo no formato do índice; null quando há menos de 2 caracteres úteis (não consulta). */
+export function termoDeBusca(digitado) {
+  const termo = palavras(digitado).join(" ");
+  return termo.length >= 2 ? termo : null;
 }

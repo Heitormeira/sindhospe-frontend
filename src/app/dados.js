@@ -4,7 +4,7 @@
 // MESMO formato de JSON (os documentos foram gerados com as mesmas consultas).
 import { collection, doc, getDoc, getDocs, query, where, limit, addDoc, serverTimestamp } from "firebase/firestore";
 import { obterDb } from "./firebase";
-import { planoDeBusca, atendeFiltros } from "./busca.mjs";
+import { termoDeBusca } from "./busca.mjs";
 
 const LIMITE_BUSCA = 8; // as regras do Firestore recusam consultas maiores
 
@@ -14,15 +14,16 @@ async function ler(caminho) {
 }
 
 // GET /api/estabelecimentos/buscar?q=
+// O filtro inteiro roda no Firestore (array-contains da frase digitada), então o
+// limite de 8 vale para resultados que já casam — como o LIMIT 8 da API.
 export async function buscarEstabelecimentos(q) {
-  const plano = planoDeBusca(q);
-  if (!plano) return [];
+  const termo = termoDeBusca(q);
+  if (!termo) return [];
   const snap = await getDocs(
-    query(collection(obterDb(), "busca"), where("prefixos", "array-contains", plano.consulta), limit(LIMITE_BUSCA))
+    query(collection(obterDb(), "busca"), where("prefixos", "array-contains", termo), limit(LIMITE_BUSCA))
   );
   return snap.docs
     .map((d) => ({ cnes: d.id, nome_fantasia: d.data().nome_fantasia }))
-    .filter((e) => atendeFiltros(e.nome_fantasia, plano.filtros))
     .sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia, "pt-BR"));
 }
 
