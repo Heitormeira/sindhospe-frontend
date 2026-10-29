@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import {
-  API_URL,
   CORES,
   LinhaEvolucao,
   ComposicaoEmpilhada,
@@ -11,6 +10,8 @@ import {
   formatCompetencia,
   getSessao,
 } from "../components";
+import { getEstabelecimento, getEvolucao, getMercado } from "../dados";
+import { mensagemAmigavel } from "../api-error";
 
 const PONTOS_POR_JANELA = { 6: 3, 12: 5, 24: 9 };
 
@@ -53,22 +54,27 @@ export default function RelatorioPage() {
     setCarregando(true);
     setErro("");
 
-    fetch(`${API_URL}/api/estabelecimento/${cnesSelecionado}`)
-      .then((r) => r.json())
+    getEstabelecimento(cnesSelecionado)
       .then(async (base) => {
-        if (base?.mensagem) throw new Error(base.mensagem);
         setDadosBase(base);
+        // Associado sem estrutura no CNES: não há séries; a tela mostra um aviso.
+        if (!base.estrutura) {
+          setSerieVoce(null);
+          setSerieMunicipio(null);
+          setSerieEstado(null);
+          return;
+        }
 
         const [evo, merc, est] = await Promise.all([
-          fetch(`${API_URL}/api/evolucao/${cnesSelecionado}`).then((r) => r.json()),
-          fetch(`${API_URL}/api/mercado?tipo=${base.estrutura.tp_unid}&municipio=${base.estrutura.codufmun}`).then((r) => r.json()),
-          fetch(`${API_URL}/api/mercado?tipo=${base.estrutura.tp_unid}`).then((r) => r.json()),
+          getEvolucao(cnesSelecionado),
+          getMercado(base.estrutura.tp_unid, base.estrutura.codufmun),
+          getMercado(base.estrutura.tp_unid),
         ]);
         setSerieVoce(evo);
         setSerieMunicipio(merc);
         setSerieEstado(est);
       })
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [cnesSelecionado]);
 
@@ -105,7 +111,7 @@ export default function RelatorioPage() {
   }, [janelaVoce, janelaMunicipio, janelaEstado]);
 
   const composicaoAtual = useMemo(() => {
-    if (!janelaVoce || !janelaMunicipio || !janelaEstado) return [];
+    if (!janelaVoce?.length || !janelaMunicipio || !janelaEstado) return [];
     const v = janelaVoce[janelaVoce.length - 1];
     const m = janelaMunicipio[janelaMunicipio.length - 1];
     const e = janelaEstado[janelaEstado.length - 1];
@@ -147,7 +153,17 @@ export default function RelatorioPage() {
       )}
       {carregando && <p className="text-sm px-1" style={{ color: CORES.neutro }}>Carregando...</p>}
 
-      {dadosBase && janelaVoce && !carregando && (
+      {dadosBase && !dadosBase.estrutura && !carregando && (
+        <Card>
+          <CardTitle>Sem dados do CNES</CardTitle>
+          <p className="text-sm" style={{ color: CORES.neutro }}>
+            Este associado não tem estrutura cadastrada no CNES/DATASUS (por exemplo, empresas prestadoras de
+            serviço sem estabelecimento de saúde próprio), então não há evolução nem comparativos para exibir.
+          </p>
+        </Card>
+      )}
+
+      {dadosBase?.estrutura && janelaVoce && !carregando && (
         <>
           <Card>
             <div className="flex items-start justify-between flex-wrap gap-3 mb-3">

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL, CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia, getSessao } from "../components";
+import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia, getSessao } from "../components";
+import { getEvolucao } from "../dados";
+import { mensagemAmigavel } from "../api-error";
 
 export default function EvolucaoPage() {
   const router = useRouter();
@@ -24,13 +26,9 @@ export default function EvolucaoPage() {
     if (!sessao) return;
     setCarregando(true);
     setErro("");
-    fetch(`${API_URL}/api/evolucao/${sessao.cnes}`)
-      .then((r) => r.json())
-      .then((json) => {
-        if (!Array.isArray(json)) throw new Error(json?.mensagem || "Resposta inesperada.");
-        setSerie(json);
-      })
-      .catch((e) => setErro(e.message))
+    getEvolucao(sessao.cnes)
+      .then((json) => setSerie(json))
+      .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [sessao]);
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_URL, CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../components";
+import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../components";
+import { getMunicipios, getTipos, getMercado } from "../dados";
 import { mensagemAmigavel } from "../api-error";
 
 export default function MercadoPage() {
@@ -14,10 +15,7 @@ export default function MercadoPage() {
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API_URL}/api/municipios`).then((r) => r.json()),
-      fetch(`${API_URL}/api/tipos`).then((r) => r.json()),
-    ])
+    Promise.all([getMunicipios(), getTipos()])
       .then(([listaMun, listaTipos]) => {
         if (!Array.isArray(listaMun) || !Array.isArray(listaTipos)) {
           throw new Error("Resposta inesperada do backend.");
@@ -36,12 +34,8 @@ export default function MercadoPage() {
     if (!municipioSelecionado || !tipoSelecionado) return;
     setCarregando(true);
     setErro("");
-    fetch(`${API_URL}/api/mercado?municipio=${municipioSelecionado}&tipo=${tipoSelecionado}`)
-      .then((r) => r.json())
-      .then((json) => {
-        if (!Array.isArray(json)) throw new Error(json?.mensagem || "Resposta inesperada.");
-        setSerie(json);
-      })
+    getMercado(tipoSelecionado, municipioSelecionado)
+      .then((json) => setSerie(json))
       .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, [municipioSelecionado, tipoSelecionado]);

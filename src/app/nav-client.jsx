@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getSessao, limparSessao } from "./components";
+import { observarSessao, sair as encerrarSessao } from "./sessao";
 
 const ABAS_PRINCIPAIS = [
   { href: "/dashboard", rotulo: "Meu estabelecimento" },
@@ -40,16 +40,21 @@ export default function NavClient({ children }) {
   const [fonteAtual, setFonteAtual] = useState("100%");
   const [contrasteAlto, setContrasteAlto] = useState(false);
 
+  // Sessão vem do Firebase Auth. Enquanto ele não responde, mostramos
+  // "Carregando..." e NÃO redirecionamos (senão um F5 mandaria ao login).
+  useEffect(() => {
+    return observarSessao((atual) => {
+      setSessao(atual);
+      setCarregando(false);
+    });
+  }, []);
+
   // Guarda de acesso: sem sessão, só as páginas públicas podem ser vistas.
   useEffect(() => {
-    const atual = getSessao();
-    setSessao(atual);
-    setCarregando(false);
-
-    if (!atual && !PAGINAS_PUBLICAS.includes(pathname)) {
+    if (!carregando && !sessao && !PAGINAS_PUBLICAS.includes(pathname)) {
       router.replace("/login");
     }
-  }, [pathname, router]);
+  }, [carregando, sessao, pathname, router]);
 
   const aplicarFonte = useCallback((valor) => {
     document.documentElement.style.setProperty("--sindhospe-escala-fonte", valor);
@@ -94,8 +99,8 @@ export default function NavClient({ children }) {
     }
   }
 
-  function sair() {
-    limparSessao();
+  async function sair() {
+    await encerrarSessao();
     router.push("/login");
   }
 
