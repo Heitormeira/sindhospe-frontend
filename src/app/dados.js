@@ -2,7 +2,7 @@
 
 // Camada de dados: uma função por rota da antiga API Express, devolvendo o
 // MESMO formato de JSON (os documentos foram gerados com as mesmas consultas).
-import { collection, doc, getDoc, getDocs, query, where, limit, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where, limit, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { obterDb } from "./firebase";
 import { termoDeBusca } from "./busca.mjs";
 
@@ -31,7 +31,7 @@ export async function buscarEstabelecimentos(q) {
 export async function getEstabelecimento(cnes) {
   const dados = await ler(`associados/${cnes}`);
   if (!dados) throw new Error("Estabelecimento não encontrado na base de identidade.");
-  const { evolucao, ...ficha } = dados;
+  const { evolucao, atual, ...ficha } = dados;
   return ficha;
 }
 
@@ -57,4 +57,26 @@ export async function solicitarRevisao({ cnes, nome, mensagem }) {
   const pedido = { cnes, nome, criado_em: serverTimestamp() };
   if (mensagem && mensagem.trim()) pedido.mensagem = mensagem.trim();
   await addDoc(collection(obterDb(), "solicitacoes_revisao"), pedido);
+}
+
+// --- Conteúdo novo (reunião de 28/10/2026): uma competência só, por tipo de estabelecimento ---
+
+/** Ficha antiga + bloco `atual` (leitos, equipamentos, profissionais, serviços, cadastro). */
+export async function getFichaCompleta(cnes) {
+  const dados = await ler(`associados/${cnes}`);
+  if (!dados) throw new Error("Estabelecimento não encontrado na base de identidade.");
+  return dados;
+}
+
+export const getSetores = () => ler("publico/setores");
+
+// Só para o perfil do sindicato (as regras negam para associados).
+export const getPainelSindicato = () => ler("sindicato/painel");
+
+export async function listarRevisoes(max = 50) {
+  const snap = await getDocs(query(collection(obterDb(), "solicitacoes_revisao"), orderBy("criado_em", "desc"), limit(max)));
+  return snap.docs.map((d) => {
+    const x = d.data();
+    return { id: d.id, cnes: x.cnes, nome: x.nome, mensagem: x.mensagem || "", criado_em: x.criado_em?.toDate?.() || null };
+  });
 }
