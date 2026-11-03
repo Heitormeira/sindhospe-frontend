@@ -7,7 +7,7 @@ import { observarSessao, sair as encerrarSessao } from "./sessao";
 
 const ABAS_PRINCIPAIS = [
   { href: "/dashboard", rotulo: "Meu estabelecimento" },
-  { href: "/visao-geral", rotulo: "Visão geral" },
+  { href: "/visao-geral", rotulo: "Meu setor" },
   { href: "/mercado", rotulo: "Mercado" },
   { href: "/evolucao", rotulo: "Evolução" },
   { href: "/relatorio", rotulo: "Relatório" },
