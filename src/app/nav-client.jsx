@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { observarSessao, sair as encerrarSessao } from "./sessao";
+import { observarSessao, sair as encerrarSessao, inicioDe } from "./sessao";
 
 const ABAS_PRINCIPAIS = [
   { href: "/dashboard", rotulo: "Meu estabelecimento" },
@@ -13,6 +13,16 @@ const ABAS_PRINCIPAIS = [
   { href: "/relatorio", rotulo: "Relatório" },
   { href: "/perfil", rotulo: "Perfil" },
 ];
+
+// Perfil do sindicato: painel consolidado + telas públicas de mercado/setores.
+const ABAS_SINDICATO = [
+  { href: "/sindicato", rotulo: "Painel SINDHOSPE" },
+  { href: "/visao-geral", rotulo: "Setores" },
+  { href: "/mercado", rotulo: "Mercado" },
+];
+
+// Telas que só fazem sentido para um associado (dependem do CNES da sessão).
+const PAGINAS_SO_ASSOCIADO = ["/dashboard", "/evolucao", "/relatorio", "/perfil"];
 
 const ABAS_PROJETO = [
   { href: "/status", rotulo: "Status do projeto" },
@@ -53,6 +63,10 @@ export default function NavClient({ children }) {
   useEffect(() => {
     if (!carregando && !sessao && !PAGINAS_PUBLICAS.includes(pathname)) {
       router.replace("/login");
+    } else if (sessao?.perfil === "sindicato" && PAGINAS_SO_ASSOCIADO.includes(pathname)) {
+      router.replace("/sindicato");
+    } else if (sessao && sessao.perfil !== "sindicato" && pathname === "/sindicato") {
+      router.replace("/dashboard");
     }
   }, [carregando, sessao, pathname, router]);
 
@@ -164,7 +178,7 @@ export default function NavClient({ children }) {
 
           {sessao && (
             <Link
-              href="/dashboard"
+              href={inicioDe(sessao)}
               className="flex items-center gap-1.5 font-semibold hover:underline shrink-0"
             >
               <svg
@@ -225,7 +239,7 @@ export default function NavClient({ children }) {
         {sessao && (
           <nav aria-label="Navegação principal" className="border-t border-[#e6f5ee]">
             <div className="w-full px-4 sm:px-10 flex flex-wrap items-center gap-1 py-2">
-              {ABAS_PRINCIPAIS.map((aba) => {
+              {(sessao.perfil === "sindicato" ? ABAS_SINDICATO : ABAS_PRINCIPAIS).map((aba) => {
                 const ativa = pathname === aba.href;
                 return (
                   <Link

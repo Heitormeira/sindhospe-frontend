@@ -146,7 +146,7 @@ export default function VisaoGeralPage() {
       {setores && !carregando && (
         <>
           <Card>
-            <p className="text-lg font-semibold text-gray-900 mb-1">Seu setor em Pernambuco</p>
+            <p className="text-lg font-semibold text-gray-900 mb-1">{meuSetor ? "Seu setor em Pernambuco" : "Setores de saúde em Pernambuco"}</p>
             <p className="text-xs text-gray-500">
               Dados públicos do CNES/DATASUS de {mesAno(setores.competencia)}, de todos os estabelecimentos de saúde do
               estado, comparados com os associados do SINDHOSPE.
