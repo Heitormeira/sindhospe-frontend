@@ -5,6 +5,9 @@ import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../com
 import { getMunicipios, getTipos, getMercado } from "../dados";
 import { mensagemAmigavel } from "../api-error";
 
+// Leitos só fazem sentido para hospitais (reunião de 28/10): nos demais tipos o gráfico some.
+const TIPOS_HOSPITAL = ["05", "07", "15", "62"];
+
 export default function MercadoPage() {
   const [municipios, setMunicipios] = useState([]);
   const [tipos, setTipos] = useState([]);

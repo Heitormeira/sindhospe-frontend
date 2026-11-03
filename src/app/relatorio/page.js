@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia, getSessao } from "../components";
 import { getFichaCompleta } from "../dados";
 import { mensagemAmigavel } from "../api-error";
-import { BarrasHorizontais, NotaFonte } from "../blocos";
-import { num, pct } from "../formatos.mjs";
+import { BarrasHorizontais, Equipamentos, Profissionais, NotaFonte } from "../blocos";
+import { num, pct, fraseComparacao } from "../formatos.mjs";
 
 // A série do CNES é trimestral: 6 meses = 3 pontos, 12 = 5, 24 = 9.
 const PONTOS_POR_JANELA = { 6: 3, 12: 5, 24: 9 };
@@ -193,12 +193,34 @@ export default function RelatorioPage() {
       {a?.cadastro?.encontrado && !carregando && a.mostra_leitos && <RelatorioLeitos a={a} janela={janela} setJanela={setJanela} />}
 
       {a?.cadastro?.encontrado && !carregando && !a.mostra_leitos && (
-        <Card>
-          <CardTitle>{a.categoria_label}</CardTitle>
-          <p className="text-sm" style={{ color: CORES.neutro }}>
-            Este tipo de estabelecimento não tem leitos de internação; o relatório de leitos não se aplica.
-          </p>
-        </Card>
+        <>
+          <Card>
+            <CardTitle>{a.categoria_label}</CardTitle>
+            <p className="text-sm" style={{ color: CORES.neutro }}>
+              {a.municipio?.nome}/PE &middot; Este tipo de estabelecimento não tem leitos de internação. O relatório
+              compara equipamentos e equipe com estabelecimentos do mesmo tipo em Pernambuco.
+            </p>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {a.equipamentos.total > 0 && <Equipamentos equipamentos={a.equipamentos} limite={8} />}
+            <Profissionais profissionais={a.profissionais} />
+          </div>
+          <Card>
+            <CardTitle>O que os números dizem</CardTitle>
+            <ul className="text-sm space-y-3" style={{ color: CORES.verdeEscuro }}>
+              {a.equipamentos.comparacao && (
+                <li>🩻 {fraseComparacao(a.equipamentos.total, a.equipamentos.comparacao, "equipamentos")}</li>
+              )}
+              {a.profissionais.comparacao && (
+                <li>👩‍⚕️ {fraseComparacao(a.profissionais.total, a.profissionais.comparacao, "profissionais")}</li>
+              )}
+              <li>
+                🧾 {num(a.servicos.length)} serviços especializados e {num(a.habilitacoes)} habilitações cadastrados no
+                CNES. Se algo estiver faltando, peça a revisão na aba Perfil.
+              </li>
+            </ul>
+          </Card>
+        </>
       )}
 
       <NotaFonte atual={a} />

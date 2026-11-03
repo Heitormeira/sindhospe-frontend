@@ -6,17 +6,18 @@ import { CORES, getSessao } from "../components";
 import { getFichaCompleta } from "../dados";
 import { mensagemAmigavel } from "../api-error";
 import {
-  Kpi,
-  Painel,
   KpisLeitos,
+  KpisCapacidade,
   RaioXLeitos,
   LeitosNoContexto,
   LeitosSus,
   LeitosPorEspecialidade,
   PerfilAtendimento,
+  Equipamentos,
+  Profissionais,
+  Servicos,
   NotaFonte,
 } from "../blocos";
-import { num } from "../formatos.mjs";
 
 function Cabecalho({ dados }) {
   const a = dados.atual;
@@ -59,6 +60,7 @@ function SemCnes() {
   );
 }
 
+// Hospital (ou quem tem leitos): leitos primeiro, depois equipamentos e equipe.
 function VisaoHospital({ a }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
@@ -70,33 +72,29 @@ function VisaoHospital({ a }) {
         <LeitosNoContexto leitos={a.leitos} />
         <LeitosSus leitos={a.leitos} />
         <LeitosPorEspecialidade leitos={a.leitos} />
+        <Equipamentos equipamentos={a.equipamentos} limite={10} />
+        <Profissionais profissionais={a.profissionais} />
         <PerfilAtendimento estrutura={a.estrutura} />
-        <Painel titulo="Serviços e habilitações">
-          <p className="text-sm text-gray-800">
-            <strong>{num(a.servicos.length)}</strong> serviços especializados e <strong>{num(a.habilitacoes)}</strong>{" "}
-            habilitações cadastrados no CNES.
-          </p>
-        </Painel>
+        <Servicos servicos={a.servicos} habilitacoes={a.habilitacoes} />
       </div>
     </div>
   );
 }
 
+// Clínica, diagnóstico (SADT), atenção domiciliar e outros: sem leitos.
+// Equipamentos e equipe na frente; comparação só com o mesmo tipo de unidade.
 function VisaoSemLeitos({ a }) {
+  const temEquipamentos = a.equipamentos.total > 0;
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
       <div className="flex md:flex-col gap-3 flex-wrap">
-        <Kpi rotulo="Serviços especial." valor={num(a.servicos.length)} />
-        <Kpi rotulo="Habilitações" valor={num(a.habilitacoes)} cor={CORES.vermelho} />
+        <KpisCapacidade a={a} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {temEquipamentos && <Equipamentos equipamentos={a.equipamentos} />}
+        <Profissionais profissionais={a.profissionais} />
+        <Servicos servicos={a.servicos} habilitacoes={a.habilitacoes} />
         <PerfilAtendimento estrutura={a.estrutura} />
-        <Painel titulo="Leitos">
-          <p className="text-sm" style={{ color: CORES.neutro }}>
-            {a.categoria_label}: este tipo de estabelecimento não tem leitos de internação, então o bloco de leitos
-            não se aplica.
-          </p>
-        </Painel>
       </div>
     </div>
   );

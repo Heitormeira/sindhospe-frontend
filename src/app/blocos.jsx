@@ -5,7 +5,7 @@
 // com totais e participação (sem médias fracionadas de leitos).
 import { useState } from "react";
 import { CORES } from "./components";
-import { num, pct, mesAno } from "./formatos.mjs";
+import { num, pct, mesAno, fraseComparacao } from "./formatos.mjs";
 
 export function Kpi({ rotulo, valor, cor = CORES.verdeEscuro, detalhe }) {
   return (
@@ -222,5 +222,77 @@ export function NotaFonte({ atual }) {
       Dados reais: identidade da base oficial do SINDHOSPE; estrutura, leitos, equipamentos e profissionais do
       CNES/DATASUS, competência {mesAno(atual?.competencia)}.
     </p>
+  );
+}
+
+// --- Clínicas, diagnóstico e demais tipos: equipamentos, profissionais e serviços ---
+
+function TextoComparacao({ texto }) {
+  if (!texto) return null;
+  return (
+    <div className="mt-3 rounded-lg px-4 py-3 text-sm border-l-4" style={{ background: CORES.verdeClaro, borderColor: CORES.verde, color: CORES.verdeEscuro }}>
+      {texto}
+    </div>
+  );
+}
+
+export function Equipamentos({ equipamentos, limite = 12 }) {
+  const e = equipamentos;
+  const lista = e.itens.map((i) => ({ nome: i.label, valor: i.existentes, detalhe: i.sus ? `(${num(i.sus)} SUS)` : "" }));
+  return (
+    <Painel
+      titulo={`Equipamentos (${num(e.total)} no CNES)`}
+      nota={
+        e.itens.length > limite
+          ? `Os ${limite} com mais unidades, de ${e.itens.length} tipos. Se algum número parecer baixo, o cadastro no CNES pode estar incompleto.`
+          : "Se algum número parecer baixo, o cadastro no CNES pode estar incompleto."
+      }
+    >
+      <BarrasHorizontais cor={CORES.verdeEscuro} limite={limite} itens={lista} />
+      <TextoComparacao texto={fraseComparacao(e.total, e.comparacao, "equipamentos")} />
+    </Painel>
+  );
+}
+
+export function Profissionais({ profissionais }) {
+  const p = profissionais;
+  return (
+    <Painel
+      titulo={`Profissionais (${num(p.total)} no CNES)`}
+      nota="Pessoas distintas com vínculo cadastrado no CNES, por ocupação. Médicos PJ também aparecem aqui. Nenhum nome é guardado pelo portal."
+    >
+      <BarrasHorizontais itens={p.grupos.map((g) => ({ nome: g.label, valor: g.total }))} />
+      <TextoComparacao texto={fraseComparacao(p.total, p.comparacao, "profissionais")} />
+    </Painel>
+  );
+}
+
+export function Servicos({ servicos, habilitacoes }) {
+  return (
+    <Painel titulo={`Serviços especializados (${num(servicos.length)})`} nota={`Habilitações oficiais no CNES: ${num(habilitacoes)}.`}>
+      {servicos.length ? (
+        <ul className="text-sm space-y-1.5">
+          {servicos.map((s) => (
+            <li key={s.codigo} className="flex gap-2">
+              <span style={{ color: CORES.verde }} aria-hidden="true">•</span>
+              <span className="text-gray-800">{s.label}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm" style={{ color: CORES.neutro }}>Nenhum serviço especializado cadastrado no CNES.</p>
+      )}
+    </Painel>
+  );
+}
+
+export function KpisCapacidade({ a }) {
+  return (
+    <>
+      <Kpi rotulo="Equipamentos" valor={num(a.equipamentos.total)} detalhe={`${num(a.equipamentos.tipos)} tipos`} />
+      <Kpi rotulo="Profissionais" valor={num(a.profissionais.total)} cor={CORES.verde} />
+      <Kpi rotulo="Serviços especial." valor={num(a.servicos.length)} cor={CORES.dourado} />
+      <Kpi rotulo="Habilitações" valor={num(a.habilitacoes)} cor={CORES.vermelho} />
+    </>
   );
 }
