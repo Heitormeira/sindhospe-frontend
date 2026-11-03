@@ -40,10 +40,16 @@ Repositório sindhospe-backend — lê o PostgreSQL (Neon) em modo somente leitu
 
 | Rota | Tela |
 |---|---|
-| `/login` | Acesso do associado: busca do estabelecimento pelo nome e senha |
-| `/dashboard` | **Meu estabelecimento:** indicadores em cartões, comparativo com município e estado, composição dos leitos (alternável entre barras e pizza) e perfil de atendimento |
-| `/relatorio` | Relatório do próprio estabelecimento: evolução da capacidade, composição dos leitos e leitura automática dos números |
-| `/visao-geral`, `/mercado`, `/evolucao`, `/perfil` | Demais abas do menu |
+| `/login` | Acesso do associado (busca do estabelecimento pelo nome e senha) e link "Acesso do SINDHOSPE" para a conta do sindicato |
+| `/dashboard` | **Meu estabelecimento:** conteúdo conforme o tipo. Hospital: leitos (total, gerais, complementares, SUS), raio-x por tipo e especialidade, participação no município e no estado. Clínica/diagnóstico: equipamentos, profissionais e serviços, comparados com o mesmo grupo (ex.: radiologia com radiologia) |
+| `/visao-geral` | **Meu setor:** o setor do associado em PE e entre os associados; tabela de todos os setores; representação do SINDHOSPE em leitos (associados com e sem leito) |
+| `/evolucao` | Série de leitos (total, SUS, não SUS, complementares); a última competência é o mesmo número do cartão |
+| `/relatorio` | Relatório do próprio estabelecimento: leitos na janela escolhida e leitura dos números; para quem não tem leitos, equipamentos e equipe |
+| `/perfil` | Dados cadastrais, situação do cadastro no CNES (última atualização), licença sanitária declarada, serviços com nome e pedido de revisão |
+| `/mercado` | Estabelecimentos por tipo e município ao longo do tempo |
+| `/sindicato` | **Painel SINDHOSPE** (só a conta do sindicato): totais dos associados, alertas (cadastro desatualizado, sem licença), setores, evolução dos leitos, lista filtrável e pedidos de revisão |
+
+Todos os números vêm da mesma competência do CNES (bloco `atual` dos documentos). As mudanças seguem a reunião com o SINDHOSPE de 28/10/2026.
 
 ## Estrutura do projeto
 
@@ -54,8 +60,10 @@ sindhospe-frontend/
     ├── layout.js            # Layout raiz: envolve todas as páginas no NavClient
     ├── nav-client.jsx       # Barra de acessibilidade, cabeçalho, menu, rodapé e bloqueio de páginas sem login
     ├── firebase.js          # Inicialização do Firebase no navegador
-    ├── sessao.js            # Login/logout com Firebase Auth e sessão atual (cnes + nome)
-    ├── dados.js             # Leitura do Firestore: uma função por tela (mesmo formato da antiga API)
+    ├── sessao.js            # Login/logout com Firebase Auth; perfil associado (cnes) ou sindicato
+    ├── dados.js             # Leitura do Firestore: uma função por tela
+    ├── blocos.jsx           # Blocos das telas (leitos, equipamentos, profissionais, serviços)
+    ├── formatos.mjs         # Números, datas e frases de comparação (testado com `npm test`)
     ├── busca.mjs            # Normalização da busca do login (testada com `npm test`)
     ├── api-error.js         # Mensagens de erro em português
     ├── components.jsx       # Cores do SINDHOSPE e componentes reutilizáveis
@@ -63,6 +71,7 @@ sindhospe-frontend/
     ├── login/page.js
     ├── dashboard/page.js
     ├── relatorio/page.js
+    ├── sindicato/page.js    # Painel SINDHOSPE
     ├── visao-geral/
     ├── mercado/
     ├── evolucao/
@@ -80,6 +89,8 @@ Cada pasta dentro de `src/app` vira uma rota do site (roteamento do Next.js App 
 ## Segurança e privacidade
 
 - Cada associado tem **conta própria** no Firebase Auth, e as regras do Firestore só deixam ler a ficha do CNES da conta logada. Isso é verificado pelo Firebase, não pelo navegador.
+- A conta do sindicato (`sindicato@sindhospe.app`, senha própria, fora da senha de demonstração) é a única que lê o Painel SINDHOSPE e os pedidos de revisão.
+- Profissionais aparecem só como contagens por ocupação: nenhum nome do CNES chega ao Firestore.
 - A busca do login devolve no máximo 8 nomes por consulta (limite imposto pelas regras) e nunca expõe CNPJ.
 - Dados de mercado e visão geral só para quem está logado.
 - **Limitação desta fase de demonstração:** todas as contas usam a mesma senha de demonstração. O modelo já é o de produção: basta definir uma senha por associado.
