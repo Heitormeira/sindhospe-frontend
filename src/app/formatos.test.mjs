@@ -18,8 +18,11 @@ test("mesAno e dataBr", () => {
 });
 
 test("fraseComparacao fala de mediana, sem casas decimais estranhas", () => {
-  const c = { estabelecimentos: 255, mediana: 31, percentil: 98 };
-  assert.match(fraseComparacao(1076, c, "equipamentos"), /255 estabelecimentos.*mediana é de 31 equipamentos\. Você tem mais que 98%/);
+  const c = { grupo: "Diagnóstico e terapia (SADT) · diagnóstico por imagem", estabelecimentos: 255, mediana: 31, percentil: 98 };
+  assert.equal(
+    fraseComparacao(1076, c, "equipamentos"),
+    "Comparado com 255 estabelecimentos de PE do mesmo grupo (Diagnóstico e terapia (SADT) · diagnóstico por imagem) que têm equipamentos cadastrados: a mediana é de 31. Você tem mais que 98% deles."
+  );
   assert.match(fraseComparacao(10, { ...c, percentil: 20 }, "equipamentos"), /abaixo da mediana: 80%/);
   assert.match(fraseComparacao(31, c, "equipamentos"), /igual ao seu/);
   assert.equal(fraseComparacao(1, null, "x"), "");

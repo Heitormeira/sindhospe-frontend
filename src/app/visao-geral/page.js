@@ -62,7 +62,7 @@ function MeuSetor({ setor }) {
         ) : (
           <Kpi rotulo="Equipamentos no setor" valor={num(e.equipamentos)} cor={CORES.dourado} detalhe={`${pct(p(a.equipamentos, e.equipamentos))} em associados`} />
         )}
-        <Kpi rotulo="Profissionais no setor" valor={num(e.profissionais)} cor={CORES.vermelho} detalhe={`${pct(p(a.profissionais, e.profissionais))} em associados`} />
+        <Kpi rotulo="Vínculos de profissionais no setor" valor={num(e.profissionais)} cor={CORES.vermelho} detalhe={`${pct(p(a.profissionais, e.profissionais))} em associados`} />
       </div>
     </Card>
   );
@@ -84,7 +84,7 @@ function TabelaSetores({ setores, destaque }) {
               <th className={th}>Com leito</th>
               <th className={th}>Leitos (assoc./PE)</th>
               <th className={th}>Equipamentos (assoc./PE)</th>
-              <th className={th}>Profissionais (assoc./PE)</th>
+              <th className={th}>Vínculos de profissionais (assoc./PE)</th>
             </tr>
           </thead>
           <tbody>
@@ -106,7 +106,7 @@ function TabelaSetores({ setores, destaque }) {
         </table>
       </div>
       <p className="text-xs mt-3" style={{ color: CORES.neutro }}>
-        Setores definidos pelo tipo de unidade do CNES. &quot;Outros&quot; reúne consultórios isolados, unidades públicas
+        Setores definidos pelo tipo de unidade do CNES. Vínculos: quem trabalha em mais de um estabelecimento conta em cada um. &quot;Outros&quot; reúne consultórios isolados, unidades públicas
         de atenção básica, farmácias e demais tipos. {setores.associados.sem_cadastro_cnes} associado(s) não aparecem na
         competência atual do CNES.
       </p>

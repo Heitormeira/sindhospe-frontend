@@ -259,7 +259,7 @@ export function Profissionais({ profissionais }) {
   return (
     <Painel
       titulo={`Profissionais (${num(p.total)} no CNES)`}
-      nota="Pessoas distintas com vínculo cadastrado no CNES, por ocupação. Médicos PJ também aparecem aqui. Nenhum nome é guardado pelo portal."
+      nota="Pessoas distintas com vínculo cadastrado no CNES, por ocupação. Médicos PJ também aparecem aqui. Se a equipe parecer pequena (por exemplo, poucos enfermeiros num hospital), o cadastro de profissionais no CNES provavelmente está incompleto. Nenhum nome é guardado pelo portal."
     >
       <BarrasHorizontais itens={p.grupos.map((g) => ({ nome: g.label, valor: g.total }))} />
       <TextoComparacao texto={fraseComparacao(p.total, p.comparacao, "profissionais")} />

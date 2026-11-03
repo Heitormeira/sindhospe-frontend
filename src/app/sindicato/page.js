@@ -30,7 +30,7 @@ function Resumo({ r }) {
       <Kpi rotulo="Associados" valor={num(r.associados)} detalhe={`${num(r.filiados)} filiados`} />
       <Kpi rotulo="Com leito / sem leito" valor={`${num(r.com_leitos)} / ${num(r.sem_leitos)}`} cor={CORES.verde} detalhe={`${num(r.sem_cadastro_cnes)} fora do CNES atual`} />
       <Kpi rotulo="Leitos nos associados" valor={num(r.leitos_associados)} cor={CORES.dourado} detalhe={`${pct(r.percentual_leitos)} dos ${num(r.leitos_estado)} de PE · ${num(r.leitos_sus_associados)} SUS`} />
-      <Kpi rotulo="Equipamentos / profissionais" valor={`${num(r.equipamentos_associados)} / ${num(r.profissionais_associados)}`} cor={CORES.vermelho} />
+      <Kpi rotulo="Equipamentos / vínculos de profissionais" valor={`${num(r.equipamentos_associados)} / ${num(r.profissionais_associados)}`} cor={CORES.vermelho} />
     </div>
   );
 }
@@ -74,7 +74,7 @@ function Setores({ setores }) {
               <th className={th}>Leitos (assoc.)</th>
               <th className={th}>% dos leitos de PE</th>
               <th className={th}>Equipamentos (assoc.)</th>
-              <th className={th}>Profissionais (assoc.)</th>
+              <th className={th}>Vínculos de profis. (assoc.)</th>
             </tr>
           </thead>
           <tbody>

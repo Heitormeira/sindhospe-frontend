@@ -33,8 +33,8 @@ export function dataBr(valor) {
  */
 export function fraseComparacao(valor, comparacao, coisa) {
   if (!comparacao || !comparacao.estabelecimentos) return "";
-  const { mediana, percentil, estabelecimentos } = comparacao;
-  const base = `Entre os ${num(estabelecimentos)} estabelecimentos do mesmo tipo em Pernambuco, a mediana é de ${num(mediana)} ${coisa}`;
+  const { mediana, percentil, estabelecimentos, grupo } = comparacao;
+  const base = `Comparado com ${num(estabelecimentos)} estabelecimentos de PE do mesmo grupo (${grupo}) que têm ${coisa} cadastrados: a mediana é de ${num(mediana)}`;
   if (valor > mediana) return `${base}. Você tem mais que ${percentil}% deles.`;
   if (valor < mediana) return `${base}. Você está abaixo da mediana: ${100 - percentil}% têm a mesma quantidade ou mais.`;
   return `${base}, igual ao seu.`;
