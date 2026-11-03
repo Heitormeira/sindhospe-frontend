@@ -109,14 +109,6 @@ export default function PerfilPage() {
             </p>
           </Card>
 
-          <Card>
-            <CardTitle>Responsáveis</CardTitle>
-            <p className="text-sm text-gray-500">
-              Não disponível — o CNES não expõe nome de diretor técnico/administrativo nos arquivos públicos que
-              usamos. Precisaria ser preenchido manualmente pelo associado ou pelo SINDHOSPE.
-            </p>
-          </Card>
-
           {temDadosCnes && (
             <Card>
               <CardTitle>Serviços habilitados</CardTitle>
