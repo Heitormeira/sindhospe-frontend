@@ -121,13 +121,19 @@ export default function MercadoPage() {
             </div>
           </Card>
 
-          <Card>
-            <CardTitle>Leitos médios por estabelecimento</CardTitle>
-            <LinhaEvolucao
-              dados={serie}
-              linhas={[{ dataKey: "media_leitos", nome: "Média de leitos", cor: CORES.verde }]}
-            />
-          </Card>
+          {TIPOS_HOSPITAL.includes(tipoSelecionado) && (
+            <Card>
+              <CardTitle>Leitos por hospital (média arredondada)</CardTitle>
+              <LinhaEvolucao
+                dados={serie.map((s) => ({ ...s, leitos_por_hospital: Math.round(parseFloat(s.media_leitos) || 0) }))}
+                linhas={[{ dataKey: "leitos_por_hospital", nome: "Leitos por hospital", cor: CORES.verde }]}
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Quanto um hospital desse tipo tem, em geral, no município. Para os totais e a sua participação, veja
+                &quot;Meu estabelecimento&quot;.
+              </p>
+            </Card>
+          )}
         </>
       )}
 
