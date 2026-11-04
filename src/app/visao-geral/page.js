@@ -1,44 +1,138 @@
 "use client";
 
+// Visão geral por setor (reunião de 28/10/2026, tarefas A6 e C):
+// em vez de um panorama genérico de Pernambuco, mostra o SETOR do associado
+// (hospital, clínica, diagnóstico...) no estado e entre os associados, e a
+// representatividade separando associados com e sem leito. Tudo na mesma
+// competência do CNES dos outros blocos.
 import { useEffect, useState } from "react";
-import {
-  CORES,
-  LinhaEvolucao,
-  Card,
-  CardTitle,
-  formatCompetencia,
-} from "../components";
-import { getVisaoGeral, getRepresentatividade } from "../dados";
+import { CORES, Card, CardTitle, getSessao } from "../components";
+import { getSetores, getFichaCompleta } from "../dados";
 import { mensagemAmigavel } from "../api-error";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
+import { Kpi } from "../blocos";
+import { num, pct, mesAno } from "../formatos.mjs";
+
+const p = (parte, todo) => (todo > 0 ? Math.round((parte * 1000) / todo) / 10 : 0);
+
+function FaixaRepresentacao({ setores }) {
+  const hosp = setores.categorias.reduce(
+    (t, c) => ({ estado: t.estado + c.estado.leitos, associados: t.associados + c.associados.leitos }),
+    { estado: 0, associados: 0 }
+  );
+  const a = setores.associados;
+  return (
+    <div
+      className="rounded-xl px-5 py-6 mb-4 shadow-sm text-center"
+      style={{ background: `linear-gradient(135deg, ${CORES.verdeEscuro}, ${CORES.verde})` }}
+    >
+      <p className="text-xs text-white/80 uppercase tracking-wide mb-1">Representação do SINDHOSPE em leitos</p>
+      <p className="text-5xl font-bold text-white mb-1">{pct(p(hosp.associados, hosp.estado))}</p>
+      <p className="text-sm text-white/90">
+        dos {num(hosp.estado)} leitos de Pernambuco estão nos {num(a.com_leitos)} associados com leito
+      </p>
+      <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-white/20 flex-wrap">
+        {[
+          [a.total, "associados"],
+          [a.com_leitos, "com leito"],
+          [a.sem_leitos, "sem leito (clínicas, diagnóstico etc.)"],
+          [hosp.associados, "leitos nos associados"],
+        ].map(([v, r]) => (
+          <div key={r}>
+            <p className="text-xl font-bold text-white">{num(v)}</p>
+            <p className="text-xs text-white/80">{r}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MeuSetor({ setor }) {
+  const e = setor.estado;
+  const a = setor.associados;
+  const temLeitos = e.leitos > 0 && setor.codigo === "hospital";
+  return (
+    <Card>
+      <CardTitle>Seu setor: {setor.label}</CardTitle>
+      <div className="flex gap-3 flex-wrap">
+        <Kpi rotulo="Estabelecimentos em PE" valor={num(e.estabelecimentos)} />
+        <Kpi rotulo="Associados do SINDHOSPE" valor={num(a.estabelecimentos)} cor={CORES.verde} detalhe={`${pct(p(a.estabelecimentos, e.estabelecimentos))} do setor`} />
+        {temLeitos ? (
+          <Kpi rotulo="Leitos no setor" valor={num(e.leitos)} cor={CORES.dourado} detalhe={`${pct(p(a.leitos, e.leitos))} em associados`} />
+        ) : (
+          <Kpi rotulo="Equipamentos no setor" valor={num(e.equipamentos)} cor={CORES.dourado} detalhe={`${pct(p(a.equipamentos, e.equipamentos))} em associados`} />
+        )}
+        <Kpi rotulo="Vínculos de profissionais no setor" valor={num(e.profissionais)} cor={CORES.vermelho} detalhe={`${pct(p(a.profissionais, e.profissionais))} em associados`} />
+      </div>
+    </Card>
+  );
+}
+
+function TabelaSetores({ setores, destaque }) {
+  const th = "text-left text-xs font-semibold px-2 py-2";
+  const td = "px-2 py-2 text-sm whitespace-nowrap";
+  return (
+    <Card>
+      <CardTitle>Pernambuco por setor</CardTitle>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead style={{ color: CORES.neutro, borderBottom: `2px solid ${CORES.verdeClaro}` }}>
+            <tr>
+              <th className={th}>Setor</th>
+              <th className={th}>Estabelecimentos</th>
+              <th className={th}>Associados</th>
+              <th className={th}>Com leito</th>
+              <th className={th}>Leitos (assoc./PE)</th>
+              <th className={th}>Equipamentos (assoc./PE)</th>
+              <th className={th}>Vínculos de profissionais (assoc./PE)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {setores.categorias.map((c) => (
+              <tr
+                key={c.codigo}
+                style={{ borderBottom: `1px solid ${CORES.verdeClaro}`, background: c.codigo === destaque ? CORES.verdeClaro : "transparent" }}
+              >
+                <td className={`${td} font-semibold text-gray-900`}>{c.label}</td>
+                <td className={td}>{num(c.estado.estabelecimentos)}</td>
+                <td className={td}>{num(c.associados.estabelecimentos)}</td>
+                <td className={td}>{num(c.associados.com_leitos)}</td>
+                <td className={td}>{c.estado.leitos ? `${num(c.associados.leitos)} / ${num(c.estado.leitos)}` : "—"}</td>
+                <td className={td}>{num(c.associados.equipamentos)} / {num(c.estado.equipamentos)}</td>
+                <td className={td}>{num(c.associados.profissionais)} / {num(c.estado.profissionais)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs mt-3" style={{ color: CORES.neutro }}>
+        Setores definidos pelo tipo de unidade do CNES. Vínculos: quem trabalha em mais de um estabelecimento conta em cada um. &quot;Outros&quot; reúne consultórios isolados, unidades públicas
+        de atenção básica, farmácias e demais tipos. {setores.associados.sem_cadastro_cnes} associado(s) não aparecem na
+        competência atual do CNES.
+      </p>
+    </Card>
+  );
+}
 
 export default function VisaoGeralPage() {
-  const [dados, setDados] = useState(null);
-  const [representatividade, setRepresentatividade] = useState(null);
+  const [setores, setSetores] = useState(null);
+  const [minhaCategoria, setMinhaCategoria] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    Promise.all([getVisaoGeral(), getRepresentatividade()])
-      .then(([visaoGeral, repr]) => {
-        if (!visaoGeral) throw new Error("Dados da visão geral ainda não foram importados.");
-        setDados(visaoGeral);
-        setRepresentatividade(repr);
+    const sessao = getSessao();
+    Promise.all([getSetores(), sessao?.cnes ? getFichaCompleta(sessao.cnes).catch(() => null) : null])
+      .then(([s, ficha]) => {
+        if (!s) throw new Error("Dados por setor ainda não foram importados.");
+        setSetores(s);
+        setMinhaCategoria(ficha?.atual?.categoria || null);
       })
       .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
   }, []);
 
-  const percentualSus = dados
-    ? Math.round((dados.total_com_vinculo_sus / dados.total_estabelecimentos) * 100)
-    : 0;
-
-  const primeira = dados?.evolucao_total?.[0];
-  const ultima = dados?.evolucao_total?.[dados.evolucao_total.length - 1];
-  const crescimentoPct =
-    primeira && ultima && primeira.total > 0
-      ? Math.round(((ultima.total - primeira.total) / primeira.total) * 100)
-      : 0;
+  const meuSetor = setores?.categorias.find((c) => c.codigo === minhaCategoria);
 
   return (
     <div>
@@ -49,94 +143,18 @@ export default function VisaoGeralPage() {
       )}
       {carregando && <p className="text-sm text-gray-500 px-1">Carregando...</p>}
 
-      {dados && !carregando && (
+      {setores && !carregando && (
         <>
           <Card>
-            <p className="text-lg font-semibold text-gray-900 mb-1">Saúde em Pernambuco — visão geral</p>
+            <p className="text-lg font-semibold text-gray-900 mb-1">{meuSetor ? "Seu setor em Pernambuco" : "Setores de saúde em Pernambuco"}</p>
             <p className="text-xs text-gray-500">
-              Dados públicos do CNES/DATASUS, todos os estabelecimentos de saúde do estado
-              ({formatCompetencia(primeira?.competencia)} a {formatCompetencia(ultima?.competencia)}).
+              Dados públicos do CNES/DATASUS de {mesAno(setores.competencia)}, de todos os estabelecimentos de saúde do
+              estado, comparados com os associados do SINDHOSPE.
             </p>
           </Card>
-
-          {representatividade && (
-            <div
-              className="rounded-xl px-5 py-6 mb-4 shadow-sm text-center"
-              style={{ background: `linear-gradient(135deg, ${CORES.verdeEscuro}, ${CORES.verde})` }}
-            >
-              <p className="text-xs text-white/80 uppercase tracking-wide mb-1">Poder de representação do SINDHOSPE</p>
-              <p className="text-5xl font-bold text-white mb-1">
-                {representatividade.percentual_leitos_representados}%
-              </p>
-              <p className="text-sm text-white/90">
-                dos leitos hospitalares de Pernambuco estão em estabelecimentos associados ao SINDHOSPE
-              </p>
-              <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-white/20">
-                <div>
-                  <p className="text-xl font-bold text-white">{representatividade.total_associados_filiados}</p>
-                  <p className="text-xs text-white/80">associados filiados</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-white">{representatividade.leitos_associados.toLocaleString("pt-BR")}</p>
-                  <p className="text-xs text-white/80">leitos representados</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-white">{representatividade.estabelecimentos_associados_no_cnes}</p>
-                  <p className="text-xs text-white/80">estabelecimentos no CNES</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
-              <p className="text-xs text-gray-500 mb-1">Estabelecimentos de saúde</p>
-              <p className="text-2xl font-bold text-gray-900">{dados.total_estabelecimentos.toLocaleString("pt-BR")}</p>
-              <p className="text-xs mt-1" style={{ color: crescimentoPct >= 0 ? CORES.verde : CORES.vermelho }}>
-                {crescimentoPct >= 0 ? "▲" : "▼"} {Math.abs(crescimentoPct)}% em 2 anos
-              </p>
-            </div>
-            <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
-              <p className="text-xs text-gray-500 mb-1">Associados SINDHOSPE</p>
-              <p className="text-2xl font-bold text-gray-900">{dados.total_associados_sindhospe}</p>
-              <p className="text-xs text-gray-400 mt-1">com identidade cruzada ao CNES</p>
-            </div>
-            <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
-              <p className="text-xs text-gray-500 mb-1">Leitos totais no estado</p>
-              <p className="text-2xl font-bold text-gray-900">{dados.total_leitos.toLocaleString("pt-BR")}</p>
-              <p className="text-xs text-gray-400 mt-1">{dados.total_leitos_complementares} complementares (UTI etc.)</p>
-            </div>
-            <div className="bg-white rounded-xl px-3 py-3 shadow-sm border" style={{ borderColor: `${CORES.verde}22` }}>
-              <p className="text-xs text-gray-500 mb-1">Vínculo com o SUS</p>
-              <p className="text-2xl font-bold text-gray-900">{percentualSus}%</p>
-              <p className="text-xs text-gray-400 mt-1">dos estabelecimentos de PE</p>
-            </div>
-          </div>
-
-          <Card>
-            <CardTitle>Evolução do número de estabelecimentos em PE</CardTitle>
-            <LinhaEvolucao
-              dados={dados.evolucao_total}
-              linhas={[{ dataKey: "total", nome: "Total de estabelecimentos", cor: CORES.verdeEscuro }]}
-            />
-          </Card>
-
-          <Card>
-            <CardTitle>Tipos de estabelecimento mais comuns</CardTitle>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={dados.distribuicao_tipo} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="label" width={130} tick={{ fontSize: 11, fill: "#374151" }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="total" radius={[0, 6, 6, 0]} maxBarSize={22}>
-                  {dados.distribuicao_tipo.map((_, i) => (
-                    <Cell key={i} fill={i === 0 ? CORES.verdeEscuro : CORES.verde} />
-                  ))}
-                  <LabelList dataKey="total" position="right" style={{ fontSize: 11, fill: "#374151" }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
+          {meuSetor && <MeuSetor setor={meuSetor} />}
+          <FaixaRepresentacao setores={setores} />
+          <TabelaSetores setores={setores} destaque={minhaCategoria} />
         </>
       )}
     </div>

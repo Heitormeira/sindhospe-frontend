@@ -8,7 +8,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebas
 import { doc, getDoc } from "firebase/firestore";
 import { obterAuth, obterDb } from "./firebase";
 
-let atual = null; // { cnes, nome } | null
+let atual = null; // { cnes, nome, perfil: "associado" } | { perfil: "sindicato", nome } | null
 const ouvintes = new Set();
 
 function publicar(sessao) {
@@ -22,13 +22,16 @@ export function getSessao() {
 
 async function montarSessao(usuario) {
   if (!usuario) return null;
-  let cnes;
+  let cnes, perfil;
   try {
     // Pode falhar se o token expirou e não dá para renovar (conta desativada, sem rede).
-    cnes = (await usuario.getIdTokenResult()).claims.cnes;
+    const { claims } = await usuario.getIdTokenResult();
+    cnes = claims.cnes;
+    perfil = claims.perfil;
   } catch {
     cnes = null;
   }
+  if (perfil === "sindicato") return { perfil: "sindicato", cnes: null, nome: "SINDHOSPE" };
   if (!cnes) {
     // Sem token válido ou conta sem vínculo com associado: sai e volta ao login,
     // em vez de deixar a tela presa em "Carregando...".
@@ -42,7 +45,12 @@ async function montarSessao(usuario) {
   } catch {
     // Sem o nome a sessão continua válida; as páginas mostram o erro ao carregar os dados.
   }
-  return { cnes, nome };
+  return { perfil: "associado", cnes, nome };
+}
+
+/** Página inicial de cada perfil. */
+export function inicioDe(sessao) {
+  return sessao?.perfil === "sindicato" ? "/sindicato" : "/dashboard";
 }
 
 /** Observa a sessão; chama cb(sessao|null) a cada mudança. Devolve a função de cancelamento. */
@@ -59,7 +67,16 @@ export function observarSessao(cb) {
 
 /** Entra e só resolve com a sessão pronta e já publicada (a guarda de rota não vê "sem sessão"). */
 export async function entrar(cnes, senha) {
-  const { user } = await signInWithEmailAndPassword(obterAuth(), `${cnes}@sindhospe.app`.toLowerCase(), senha);
+  return entrarComEmail(`${cnes}@sindhospe.app`.toLowerCase(), senha);
+}
+
+/** Acesso do SINDHOSPE (conta única com perfil de sindicato). */
+export function entrarComoSindicato(senha) {
+  return entrarComEmail("sindicato@sindhospe.app", senha);
+}
+
+async function entrarComEmail(email, senha) {
+  const { user } = await signInWithEmailAndPassword(obterAuth(), email, senha);
   const sessao = await montarSessao(user);
   if (!sessao) throw Object.assign(new Error("Conta sem acesso"), { code: "permission-denied" });
   publicar(sessao);

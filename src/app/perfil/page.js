@@ -3,8 +3,65 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CORES, Card, CardTitle, Servico, getSessao } from "../components";
-import { getEstabelecimento, solicitarRevisao } from "../dados";
+import { getFichaCompleta, solicitarRevisao } from "../dados";
 import { mensagemAmigavel } from "../api-error";
+import { textoCadastro, dataBr, mesAno } from "../formatos.mjs";
+
+const COR_TOM = { ok: CORES.verde, atencao: CORES.dourado, neutro: CORES.neutro };
+
+// Situação do cadastro no CNES (reunião de 28/10, tarefa A5): data em que o próprio
+// estabelecimento atualizou a ficha, separada da competência mensal do sistema.
+function CadastroCnes({ atual }) {
+  const t = textoCadastro(atual?.cadastro);
+  const cor = COR_TOM[t.tom];
+  return (
+    <Card>
+      <CardTitle>Situação do cadastro no CNES</CardTitle>
+      <div className="flex items-start gap-3 flex-wrap">
+        <span className="text-sm font-bold px-3 py-1 rounded-md" style={{ background: `${cor}1f`, color: cor, border: `1px solid ${cor}` }}>
+          {t.rotulo}
+        </span>
+        <p className="text-sm text-gray-800 flex-1 min-w-[220px]">{t.detalhe}</p>
+      </div>
+      <ul className="divide-y divide-gray-100 text-sm mt-3">
+        <LinhaDado label="Última atualização do cadastro" valor={mesAno(atual?.cadastro?.ultima_atualizacao)} />
+        <LinhaDado label="Competência do CNES usada no portal" valor={mesAno(atual?.competencia)} />
+      </ul>
+      <p className="text-xs text-gray-400 mt-2">
+        O sistema do CNES é publicado todo mês; a data acima é a última vez que o estabelecimento atualizou a própria
+        ficha. O portal considera &quot;em dia&quot; uma atualização feita nos últimos 6 meses. Quem atende planos de saúde
+        precisa manter o cadastro atualizado. Para corrigir, use o CNESWeb (Consultas → Estabelecimentos).
+      </p>
+    </Card>
+  );
+}
+
+// Licença sanitária como informada no CNES. A conferência com a APEVISA/vigilância
+// municipal depende de dados que ainda não são públicos (ver docs/projeto/pesquisa-fontes.md).
+function LicencaSanitaria({ atual }) {
+  const l = atual?.cadastro?.licenca;
+  return (
+    <Card>
+      <CardTitle>Licença sanitária informada no CNES</CardTitle>
+      {l ? (
+        <ul className="divide-y divide-gray-100 text-sm">
+          <LinhaDado label="Número do alvará/licença" valor={l.numero} />
+          <LinhaDado label="Data de expedição" valor={dataBr(l.expedicao)} />
+          <LinhaDado label="Órgão expedidor" valor={l.orgao} />
+        </ul>
+      ) : (
+        <p className="text-sm" style={{ color: COR_TOM.atencao }}>
+          Nenhuma licença sanitária informada no cadastro do CNES. Se o estabelecimento tem alvará, vale incluir o número
+          no CNES.
+        </p>
+      )}
+      <p className="text-xs text-gray-400 mt-2">
+        Estes são os dados que o próprio estabelecimento declarou ao CNES. O portal ainda não confere a validade com a
+        APEVISA ou com a vigilância sanitária municipal.
+      </p>
+    </Card>
+  );
+}
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -28,7 +85,7 @@ export default function PerfilPage() {
   useEffect(() => {
     if (!sessao) return;
     setCarregando(true);
-    getEstabelecimento(sessao.cnes)
+    getFichaCompleta(sessao.cnes)
       .then((json) => setDados(json))
       .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
@@ -50,6 +107,8 @@ export default function PerfilPage() {
 
   if (!sessao) return null;
   const temDadosCnes = dados && dados.estrutura !== null;
+  const est = dados?.atual?.estrutura;
+  const simNao = (v) => (v ? "1" : "0");
 
   return (
     <div>
@@ -68,7 +127,7 @@ export default function PerfilPage() {
                 <p className="text-xs mb-0.5" style={{ color: CORES.verde }}>Perfil do estabelecimento</p>
                 <p className="text-lg font-semibold text-gray-900">{dados.identidade.nome_fantasia}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Atualizado em {new Date().toLocaleDateString("pt-BR")}
+                  Dados do CNES de {mesAno(dados.atual?.competencia)}
                 </p>
               </div>
               <span className="text-xs font-semibold px-3 py-1 rounded-md" style={{ background: CORES.verdeClaro, color: CORES.verdeEscuro }}>
@@ -92,11 +151,14 @@ export default function PerfilPage() {
             )}
           </Card>
 
+          <CadastroCnes atual={dados.atual} />
+          {dados.atual?.cadastro?.encontrado && <LicencaSanitaria atual={dados.atual} />}
+
           <Card>
             <CardTitle>Localização</CardTitle>
             {temDadosCnes ? (
               <ul className="divide-y divide-gray-100 text-sm">
-                <LinhaDado label="Município" valor={`${dados.estrutura.municipio_nome}/PE`} />
+                <LinhaDado label="Município" valor={`${dados.atual?.municipio?.nome || dados.estrutura.municipio_nome}/PE`} />
                 <LinhaDado label="Endereço completo" valor="Não disponível nesta base" indisponivel />
                 <LinhaDado label="CEP" valor="Não disponível nesta base" indisponivel />
               </ul>
@@ -109,31 +171,25 @@ export default function PerfilPage() {
             </p>
           </Card>
 
-          <Card>
-            <CardTitle>Responsáveis</CardTitle>
-            <p className="text-sm text-gray-500">
-              Não disponível — o CNES não expõe nome de diretor técnico/administrativo nos arquivos públicos que
-              usamos. Precisaria ser preenchido manualmente pelo associado ou pelo SINDHOSPE.
-            </p>
-          </Card>
-
-          {temDadosCnes && (
+          {est && (
             <Card>
               <CardTitle>Serviços habilitados</CardTitle>
               <ul className="divide-y divide-gray-100 text-sm">
-                <Servico nome="Urgência/Emergência" valor={dados.estrutura.tem_urgencia} cores={CORES} />
-                <Servico nome="Centro cirúrgico" valor={dados.estrutura.tem_centro_cirurgico} cores={CORES} />
-                <Servico nome="Centro obstétrico" valor={dados.estrutura.tem_centro_obstetrico} cores={CORES} />
-                <Servico nome="Atendimento ambulatorial" valor={dados.estrutura.tem_atend_ambulatorial} cores={CORES} />
+                <Servico nome="Urgência/Emergência" valor={simNao(est.urgencia)} cores={CORES} />
+                <Servico nome="Centro cirúrgico" valor={simNao(est.centro_cirurgico)} cores={CORES} />
+                <Servico nome="Centro obstétrico" valor={simNao(est.centro_obstetrico)} cores={CORES} />
+                <Servico nome="Atendimento ambulatorial" valor={simNao(est.ambulatorio)} cores={CORES} />
               </ul>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 text-sm">
-                <span className="text-gray-600">Outros serviços especializados cadastrados (CNES)</span>
-                <span className="font-bold" style={{ color: CORES.verdeEscuro }}>{dados.indicadores.total_servicos_especializados}</span>
+              <div className="mt-2 pt-2 border-t border-gray-100 text-sm">
+                <p className="text-gray-600 mb-1.5">
+                  Serviços especializados cadastrados no CNES ({dados.atual?.servicos?.length ?? 0})
+                </p>
+                <ul className="space-y-1">
+                  {(dados.atual?.servicos || []).map((s) => (
+                    <li key={s.codigo} className="text-gray-900">• {s.label}</li>
+                  ))}
+                </ul>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Nome por extenso de cada serviço ainda não disponível — sem tabela de tradução pública
-                consolidada pro código do CNES (mostrando só a contagem por enquanto).
-              </p>
             </Card>
           )}
 

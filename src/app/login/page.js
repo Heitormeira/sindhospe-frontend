@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSessao } from "../components";
 import { buscarEstabelecimentos } from "../dados";
-import { entrar as entrarNoFirebase } from "../sessao";
+import { entrar as entrarNoFirebase, entrarComoSindicato, inicioDe } from "../sessao";
 import { mensagemAmigavel } from "../api-error";
 
 // Dica opcional exibida abaixo do campo de senha na fase de demonstração
@@ -22,11 +22,13 @@ export default function LoginPage() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [modoSindicato, setModoSindicato] = useState(false);
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    if (getSessao()) {
-      router.replace("/dashboard");
+    const sessao = getSessao();
+    if (sessao) {
+      router.replace(inicioDe(sessao));
     }
   }, [router]);
 
@@ -75,6 +77,22 @@ export default function LoginPage() {
     e.preventDefault();
     setErro("");
 
+    if (modoSindicato) {
+      if (!senha) {
+        setErro("Digite a senha do SINDHOSPE.");
+        return;
+      }
+      setEnviando(true);
+      try {
+        await entrarComoSindicato(senha);
+        router.push("/sindicato");
+      } catch (falha) {
+        setErro(mensagemAmigavel(falha));
+        setEnviando(false);
+      }
+      return;
+    }
+
     if (!escolhido) {
       setErro("Selecione o seu estabelecimento na lista antes de continuar.");
       return;
@@ -92,6 +110,59 @@ export default function LoginPage() {
       setErro(mensagemAmigavel(falha));
       setEnviando(false);
     }
+  }
+
+  function alternarModo() {
+    setModoSindicato((v) => !v);
+    setEscolhido(null);
+    setTermo("");
+    setSenha("");
+    setErro("");
+  }
+
+  if (modoSindicato) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-[2rem] sm:text-[2.5rem] leading-tight font-bold text-[#0b4a34] mb-2">Acesso do SINDHOSPE</h1>
+          <p className="text-lg text-[#4b5f57]">Painel consolidado de todos os associados, só para a equipe do sindicato.</p>
+        </div>
+        <form onSubmit={entrar} className="bg-white border border-[#e6f5ee] rounded-xl p-6 sm:p-8 space-y-6 shadow-sm">
+          <div>
+            <label htmlFor="campo-senha-sindicato" className="block text-lg font-bold text-[#0b4a34] mb-3">
+              Senha do SINDHOSPE
+            </label>
+            <input
+              id="campo-senha-sindicato"
+              type="password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="Senha"
+              autoComplete="current-password"
+              className="w-full text-lg text-[#0b4a34] placeholder:text-[#9db3aa] border-2 border-[#bfd5cc] rounded-lg px-4 h-14 focus:outline-none focus:border-[#159957] focus:ring-2 focus:ring-[#e6f5ee]"
+            />
+          </div>
+          {erro && (
+            <div className="bg-[#fbe9ea] border-2 border-[#8f1d24] text-[#8f1d24] font-medium rounded-lg px-4 py-3 flex items-start gap-2">
+              <span aria-hidden="true">⚠</span>
+              <span>{erro}</span>
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={enviando}
+            className="w-full min-h-[52px] text-lg font-bold text-white bg-[#0b4a34] hover:bg-[#159957] transition-colors rounded-lg px-4 disabled:opacity-60"
+          >
+            {enviando ? "Entrando..." : "Entrar no painel →"}
+          </button>
+        </form>
+        <p className="text-center mt-5">
+          <button type="button" onClick={alternarModo} className="text-base font-semibold text-[#0b4a34] underline min-h-[44px] px-2">
+            ← Sou associado
+          </button>
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -255,6 +326,11 @@ export default function LoginPage() {
           {enviando ? "Entrando..." : "Entrar →"}
         </button>
       </form>
+      <p className="text-center mt-5">
+        <button type="button" onClick={alternarModo} className="text-base font-semibold text-[#0b4a34] underline min-h-[44px] px-2">
+          Acesso do SINDHOSPE (equipe do sindicato)
+        </button>
+      </p>
     </div>
   );
 }
