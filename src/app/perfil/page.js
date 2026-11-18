@@ -6,6 +6,7 @@ import { CORES, Card, CardTitle, Servico, getSessao } from "../components";
 import { getFichaCompleta, solicitarRevisao } from "../dados";
 import { mensagemAmigavel } from "../api-error";
 import { textoCadastro, dataBr, mesAno } from "../formatos.mjs";
+import TrocarSenha from "../trocar-senha";
 
 const COR_TOM = { ok: CORES.verde, atencao: CORES.dourado, neutro: CORES.neutro };
 
@@ -192,6 +193,8 @@ export default function PerfilPage() {
               </div>
             </Card>
           )}
+
+          <TrocarSenha />
 
           <Card>
             <CardTitle>Divergências ou dados desatualizados?</CardTitle>

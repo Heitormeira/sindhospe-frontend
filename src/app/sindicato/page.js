@@ -9,6 +9,7 @@ import { getPainelSindicato, listarRevisoes } from "../dados";
 import { mensagemAmigavel } from "../api-error";
 import { Kpi, BarrasHorizontais } from "../blocos";
 import { num, pct, mesAno } from "../formatos.mjs";
+import TrocarSenha from "../trocar-senha";
 
 const CATEGORIAS = {
   hospital: "Hospital",
@@ -261,6 +262,7 @@ export default function SindicatoPage() {
           </div>
           <ListaAssociados lista={painel.lista} />
           <Revisoes />
+          <TrocarSenha />
         </>
       )}
     </div>
