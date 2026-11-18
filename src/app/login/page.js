@@ -7,9 +7,8 @@ import { buscarEstabelecimentos } from "../dados";
 import { entrar as entrarNoFirebase, entrarComoSindicato, inicioDe } from "../sessao";
 import { mensagemAmigavel } from "../api-error";
 
-// Dica opcional exibida abaixo do campo de senha na fase de demonstração
-// (variável de ambiente; vazia = nenhuma dica). A senha em si fica no Firebase Auth.
-const DICA_SENHA_DEMO = process.env.NEXT_PUBLIC_SENHA_DEMO_DICA || "";
+// Cada associado tem senha individual (entregue pelo SINDHOSPE); não há mais
+// senha de demonstração exibida na tela.
 
 export default function LoginPage() {
   const router = useRouter();
@@ -304,11 +303,16 @@ export default function LoginPage() {
               {mostrarSenha ? "Ocultar" : "Mostrar"}
             </button>
           </div>
-          {DICA_SENHA_DEMO && (
-            <p className="text-sm text-[#4b5f57] mt-2">
-              Fase de demonstração — senha de acesso: <strong>{DICA_SENHA_DEMO}</strong>
+          <details className="mt-2 text-sm text-[#4b5f57]">
+            <summary className="cursor-pointer font-semibold text-[#0b4a34] min-h-[32px] inline-flex items-center">
+              Esqueci minha senha / não tenho senha
+            </summary>
+            <p className="mt-1 leading-relaxed">
+              Cada estabelecimento tem uma senha individual, entregue pelo SINDHOSPE. Se você não recebeu ou esqueceu
+              a sua, peça uma nova ao SINDHOSPE (contato@sindhospe.org.br). Depois de entrar, você pode trocá-la na aba
+              Perfil.
             </p>
-          )}
+          </details>
         </div>
 
         {erro && (
