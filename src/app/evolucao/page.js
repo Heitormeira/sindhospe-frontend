@@ -1,38 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia, getSessao } from "../components";
-import { getFichaCompleta } from "../dados";
-import { mensagemAmigavel } from "../api-error";
+import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../components";
+import { useFichaDaSessao } from "../usar-ficha";
 import { NotaFonte } from "../blocos";
 import { num } from "../formatos.mjs";
 
 export default function EvolucaoPage() {
-  const router = useRouter();
-  const [sessao, setSessao] = useState(null);
-  const [atual, setAtual] = useState(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState("");
-
-  useEffect(() => {
-    const s = getSessao();
-    if (!s) {
-      router.replace("/login");
-      return;
-    }
-    setSessao(s);
-  }, [router]);
-
-  useEffect(() => {
-    if (!sessao?.cnes) return;
-    setCarregando(true);
-    setErro("");
-    getFichaCompleta(sessao.cnes)
-      .then((json) => setAtual(json.atual || null))
-      .catch((e) => setErro(mensagemAmigavel(e)))
-      .finally(() => setCarregando(false));
-  }, [sessao]);
+  const { sessao, dados, erro, carregando } = useFichaDaSessao();
+  const atual = dados?.atual || null;
 
   if (!sessao) return null;
 

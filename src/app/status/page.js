@@ -3,20 +3,18 @@
 import { CORES, Card } from "../components";
 
 const ITENS = [
-  { titulo: "Login do portal", coluna: "doing", nota: "Funciona (nome + senha demo). Falta: login por CNES/CNPJ real, recuperação de senha, contato de suporte." },
-  { titulo: "Meu estabelecimento", coluna: "done", nota: "Identidade, capacidade, serviços, insights — dados reais." },
-  { titulo: "Perfil do estabelecimento", coluna: "doing", nota: "Dados cadastrais e serviços reais. Falta: endereço completo, responsáveis, natureza jurídica traduzida." },
-  { titulo: "Estrutura física e capacidade", coluna: "done", nota: "Leitos totais/complementares, comparação entre períodos." },
-  { titulo: "Serviços oferecidos (catálogo)", coluna: "todo", nota: "Falta tradução de código pra nome do serviço, e análise de lacunas vs. concorrência." },
-  { titulo: "Indicadores (conformidade cadastral)", coluna: "todo", nota: "Ainda não existe como tela própria." },
-  { titulo: "Mercado (agregado por município/tipo)", coluna: "done", nota: "Evolução do número de estabelecimentos, com e sem vínculo SUS." },
-  { titulo: "Evolução histórica", coluna: "done", nota: "Série trimestral real, jun/2024 a jun/2026, travada pro associado logado." },
-  { titulo: "Relatório dinâmico", coluna: "done", nota: "KPIs, evolução vs. mercado, composição de leitos, insights, janela 6/12/24 meses." },
-  { titulo: "Solicitar revisão de dados", coluna: "done", nota: "Formulário funcional, salva no banco." },
-  { titulo: "Visão Geral do estado + representatividade", coluna: "done", nota: "% de leitos de PE representados pelos associados do SINDHOSPE." },
-  { titulo: "Área administrativa (SINDHOSPE)", coluna: "todo", nota: "Gestão de associados, vínculo associado↔CNES, sincronização, trilha de auditoria." },
-  { titulo: "Autenticação real (por associado, não senha única)", coluna: "todo", nota: "Hoje senha é fixa (12345) pra todo mundo — é só demo." },
-  { titulo: "Mix de atendimento (SUS/convênio/particular)", coluna: "todo", nota: "Sem base pública — será formulário auto-preenchido pelo associado." },
+  { titulo: "Login do portal", coluna: "done", nota: "Uma conta por estabelecimento (Firebase Auth), senha individual entregue pelo SINDHOSPE e troca de senha no Perfil." },
+  { titulo: "Meu estabelecimento", coluna: "done", nota: "Conteúdo por tipo: hospital vê leitos (LT do CNES); clínicas e diagnóstico veem equipamentos, profissionais e serviços. Comparação só com o mesmo tipo." },
+  { titulo: "Perfil do estabelecimento", coluna: "done", nota: "Dados cadastrais, natureza jurídica, validade do cadastro (6 meses, Portaria SAS 118/2014), licença sanitária declarada e quem o estabelecimento atende." },
+  { titulo: "Leitos com uma fonte só", coluna: "done", nota: "Cartão, evolução, relatório e gráfico SUS saem do mesmo arquivo (LT) e do mesmo mês. Sem médias fracionadas." },
+  { titulo: "Mercado (agregado por município/tipo)", coluna: "done", nota: "Número de estabelecimentos por tipo e município, com e sem vínculo SUS." },
+  { titulo: "Evolução histórica", coluna: "done", nota: "Série trimestral do CNES desde mar/2020 (entra no ar na próxima importação)." },
+  { titulo: "Relatório dinâmico", coluna: "done", nota: "KPIs, evolução, composição de leitos e comparação com o mesmo tipo; janelas de 6, 12 e 24 meses e 5 anos." },
+  { titulo: "Painel SINDHOSPE", coluna: "done", nota: "Visão do sindicato com acesso próprio: associados com e sem leito, setores, cadastros desatualizados e pedidos de revisão." },
+  { titulo: "Solicitar revisão de dados", coluna: "done", nota: "O associado envia; só o sindicato lê." },
+  { titulo: "Importação dos dados", coluna: "done", nota: "Direto dos arquivos públicos do DATASUS, sem banco intermediário; dados de profissionais só como contagem (LGPD)." },
+  { titulo: "Licença sanitária conferida com a APEVISA", coluna: "todo", nota: "Hoje mostra só o que o estabelecimento declarou no CNES; a conferência depende de dados da vigilância sanitária." },
+  { titulo: "Endereço completo", coluna: "todo", nota: "O arquivo do CNES usado traz só o município." },
 ];
 
 const COLUNAS = [

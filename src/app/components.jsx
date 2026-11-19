@@ -1,5 +1,6 @@
 "use client";
 
+import { mesAno, mesAnoLongo } from "./formatos.mjs";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid, Legend } from "recharts";
 
 
@@ -14,12 +15,9 @@ export const CORES = {
   neutro: "#4b5f57", // verde-acinzentado, usado no lugar de vermelho em comparativos neutros
 };
 
-// Converte "202406" -> "Jun/24"
+// Converte "202406" -> "jun/2024" (ano com 4 dígitos para não confundir anos diferentes)
 export function formatCompetencia(comp) {
-  const meses = ["", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const ano = comp.slice(0, 4);
-  const mes = parseInt(comp.slice(4, 6), 10);
-  return `${meses[mes]}/${ano.slice(2)}`;
+  return mesAno(comp);
 }
 
 export function ComparativoBarras({ dados }) {
@@ -52,9 +50,11 @@ export function LinhaEvolucao({ dados, linhas, formatoX = formatCompetencia }) {
           tick={{ fontSize: 11, fill: "#6b7280" }}
           axisLine={false}
           tickLine={false}
+          interval="preserveStartEnd"
+          minTickGap={24}
         />
         <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
-        <Tooltip labelFormatter={formatoX} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+        <Tooltip labelFormatter={mesAnoLongo} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
         {linhas.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
         {linhas.map((l) => (
           <Line

@@ -59,3 +59,33 @@ export function textoCadastro(cadastro) {
     detalhe: `Última atualização em ${mesAno(cadastro.ultima_atualizacao)} (${quando}). Vale revisar o cadastro no CNES.`,
   };
 }
+
+const MESES_LONGOS = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
+/** "202406" ou "2024-06" -> "junho de 2024"; vazio -> "—". */
+export function mesAnoLongo(valor) {
+  const m = String(valor || "").match(/^(\d{4})-?(\d{2})/);
+  if (!m) return "—";
+  return `${MESES_LONGOS[parseInt(m[2], 10) - 1]} de ${m[1]}`;
+}
+
+export const PRAZO_CADASTRO_MESES = 6;
+
+/**
+ * Validade do cadastro no CNES (Portaria SAS/MS nº 118/2014: atualizar a cada 6 meses).
+ * `ultima`: "AAAA-MM" da última atualização; `hoje`: Date.
+ * Devolve { proxima: "AAAA-MM", situacao: "em_dia" | "vence_em_breve" | "vencido" | "sem_data", mesesRestantes }.
+ * O prazo vale até o fim do mês de `proxima`; "vence em breve" = no mês do prazo ou no anterior.
+ */
+export function validadeCadastro(ultima, hoje = new Date()) {
+  const m = String(ultima || "").match(/^(\d{4})-?(\d{2})/);
+  if (!m) return { proxima: null, situacao: "sem_data", mesesRestantes: null };
+  const prazo = parseInt(m[1], 10) * 12 + parseInt(m[2], 10) - 1 + PRAZO_CADASTRO_MESES;
+  const proxima = `${Math.floor(prazo / 12)}-${String((prazo % 12) + 1).padStart(2, "0")}`;
+  const mesesRestantes = prazo - (hoje.getFullYear() * 12 + hoje.getMonth());
+  const situacao = mesesRestantes < 0 ? "vencido" : mesesRestantes <= 1 ? "vence_em_breve" : "em_dia";
+  return { proxima, situacao, mesesRestantes };
+}

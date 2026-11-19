@@ -74,6 +74,7 @@ function Setores({ setores }) {
               <th className={th}>% dos estab. de PE</th>
               <th className={th}>Leitos (assoc.)</th>
               <th className={th}>% dos leitos de PE</th>
+              <th className={th}>UTI e complementares (assoc.)</th>
               <th className={th}>Equipamentos (assoc.)</th>
               <th className={th}>Vínculos de profis. (assoc.)</th>
             </tr>
@@ -86,6 +87,7 @@ function Setores({ setores }) {
                 <td className={td}>{p(c.associados.estabelecimentos, c.estado.estabelecimentos)}</td>
                 <td className={td}>{c.estado.leitos ? num(c.associados.leitos) : "—"}</td>
                 <td className={td}>{c.estado.leitos ? p(c.associados.leitos, c.estado.leitos) : "—"}</td>
+                <td className={td}>{c.estado.leitos ? num(c.associados.leitos_complementares || 0) : "—"}</td>
                 <td className={td}>{num(c.associados.equipamentos)}</td>
                 <td className={td}>{num(c.associados.profissionais)}</td>
               </tr>
@@ -208,15 +210,13 @@ function Revisoes() {
 }
 
 export default function SindicatoPage() {
+  const [ehSindicato] = useState(() => getSessao()?.perfil === "sindicato");
   const [painel, setPainel] = useState(null);
-  const [carregando, setCarregando] = useState(true);
+  const [carregando, setCarregando] = useState(ehSindicato);
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    if (getSessao()?.perfil !== "sindicato") {
-      setCarregando(false);
-      return;
-    }
+    if (!ehSindicato) return;
     getPainelSindicato()
       .then((p) => {
         if (!p) throw new Error("O painel do sindicato ainda não foi importado.");
@@ -224,7 +224,7 @@ export default function SindicatoPage() {
       })
       .catch((e) => setErro(mensagemAmigavel(e)))
       .finally(() => setCarregando(false));
-  }, []);
+  }, [ehSindicato]);
 
   return (
     <div>
@@ -253,7 +253,7 @@ export default function SindicatoPage() {
             <div className="bg-white rounded-xl p-5" style={{ border: "1px solid #d6e8e0" }}>
               <p className="text-sm font-bold text-gray-900 mb-2">Leitos dos associados ao longo do tempo</p>
               <LinhaEvolucao dados={painel.evolucao_leitos} linhas={[{ dataKey: "associados", nome: "Associados", cor: CORES.verdeEscuro }]} />
-              <p className="text-xs mt-2" style={{ color: CORES.neutro }}>Associados atuais, em cada competência do CNES.</p>
+              <p className="text-xs mt-2" style={{ color: CORES.neutro }}>Soma dos leitos dos associados atuais, em cada trimestre do CNES.</p>
             </div>
             <div className="bg-white rounded-xl p-5" style={{ border: "1px solid #d6e8e0" }}>
               <p className="text-sm font-bold text-gray-900 mb-3">Equipamentos mais comuns nos associados</p>

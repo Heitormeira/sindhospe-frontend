@@ -1,10 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CORES, getSessao } from "../components";
-import { getFichaCompleta } from "../dados";
-import { mensagemAmigavel } from "../api-error";
+import { CORES } from "../components";
+import { useFichaDaSessao } from "../usar-ficha";
 import {
   KpisLeitos,
   KpisCapacidade,
@@ -13,6 +10,7 @@ import {
   LeitosSus,
   LeitosPorEspecialidade,
   PerfilAtendimento,
+  QuemAtende,
   Equipamentos,
   Profissionais,
   Servicos,
@@ -74,7 +72,8 @@ function VisaoHospital({ a }) {
         <LeitosPorEspecialidade leitos={a.leitos} />
         <Equipamentos equipamentos={a.equipamentos} limite={10} />
         <Profissionais profissionais={a.profissionais} />
-        <PerfilAtendimento estrutura={a.estrutura} />
+        <PerfilAtendimento estrutura={a.estrutura} hospital />
+        <QuemAtende atendimento={a.atendimento} />
         <Servicos servicos={a.servicos} habilitacoes={a.habilitacoes} />
       </div>
     </div>
@@ -95,36 +94,14 @@ function VisaoSemLeitos({ a }) {
         <Profissionais profissionais={a.profissionais} />
         <Servicos servicos={a.servicos} habilitacoes={a.habilitacoes} />
         <PerfilAtendimento estrutura={a.estrutura} />
+        <QuemAtende atendimento={a.atendimento} />
       </div>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [sessao, setSessao] = useState(null);
-  const [dados, setDados] = useState(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState("");
-
-  useEffect(() => {
-    const s = getSessao();
-    if (!s) {
-      router.replace("/login");
-      return;
-    }
-    setSessao(s);
-  }, [router]);
-
-  useEffect(() => {
-    if (!sessao?.cnes) return;
-    setCarregando(true);
-    setErro("");
-    getFichaCompleta(sessao.cnes)
-      .then((json) => setDados(json))
-      .catch((e) => setErro(mensagemAmigavel(e)))
-      .finally(() => setCarregando(false));
-  }, [sessao]);
+  const { sessao, dados, erro, carregando } = useFichaDaSessao();
 
   if (!sessao) return null;
   const a = dados?.atual;

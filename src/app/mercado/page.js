@@ -5,17 +5,21 @@ import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../com
 import { getMunicipios, getTipos, getMercado } from "../dados";
 import { mensagemAmigavel } from "../api-error";
 
-// Leitos só fazem sentido para hospitais (reunião de 28/10): nos demais tipos o gráfico some.
-const TIPOS_HOSPITAL = ["05", "07", "15", "62"];
+// Sem médias de leitos por estabelecimento (reunião de 28/10): totais e participação ficam em
+// "Meu estabelecimento", sempre comparando com o mesmo tipo de unidade.
 
 export default function MercadoPage() {
   const [municipios, setMunicipios] = useState([]);
   const [tipos, setTipos] = useState([]);
   const [municipioSelecionado, setMunicipioSelecionado] = useState("");
   const [tipoSelecionado, setTipoSelecionado] = useState("");
-  const [serie, setSerie] = useState(null);
-  const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState("");
+  // Série da última combinação carregada; "carregando" = a combinação escolhida ainda não chegou.
+  const [resultado, setResultado] = useState({ chave: "", serie: null, erro: "" });
+  const [erroListas, setErroListas] = useState("");
+  const chave = municipioSelecionado && tipoSelecionado ? `${tipoSelecionado}_${municipioSelecionado}` : "";
+  const carregando = Boolean(chave) && resultado.chave !== chave;
+  const serie = carregando ? null : resultado.serie;
+  const erro = erroListas || (carregando ? "" : resultado.erro);
 
   useEffect(() => {
     Promise.all([getMunicipios(), getTipos()])
@@ -30,18 +34,19 @@ export default function MercadoPage() {
         setMunicipioSelecionado(recife ? recife.codufmun : listaMun[0]?.codufmun || "");
         setTipoSelecionado(listaTipos[0]?.codigo || "");
       })
-      .catch((e) => setErro(mensagemAmigavel(e)));
+      .catch((e) => setErroListas(mensagemAmigavel(e)));
   }, []);
 
   useEffect(() => {
-    if (!municipioSelecionado || !tipoSelecionado) return;
-    setCarregando(true);
-    setErro("");
+    if (!chave) return undefined;
+    let ativo = true;
     getMercado(tipoSelecionado, municipioSelecionado)
-      .then((json) => setSerie(json))
-      .catch((e) => setErro(mensagemAmigavel(e)))
-      .finally(() => setCarregando(false));
-  }, [municipioSelecionado, tipoSelecionado]);
+      .then((json) => ativo && setResultado({ chave, serie: json, erro: "" }))
+      .catch((e) => ativo && setResultado({ chave, serie: null, erro: mensagemAmigavel(e) }));
+    return () => {
+      ativo = false;
+    };
+  }, [chave, municipioSelecionado, tipoSelecionado]);
 
   const nomeMunicipio = municipios.find((m) => m.codufmun === municipioSelecionado)?.nome_municipio || "";
   const nomeTipo = tipos.find((t) => t.codigo === tipoSelecionado)?.label || "";
@@ -121,19 +126,6 @@ export default function MercadoPage() {
             </div>
           </Card>
 
-          {TIPOS_HOSPITAL.includes(tipoSelecionado) && (
-            <Card>
-              <CardTitle>Leitos por hospital (média arredondada)</CardTitle>
-              <LinhaEvolucao
-                dados={serie.map((s) => ({ ...s, leitos_por_hospital: Math.round(parseFloat(s.media_leitos) || 0) }))}
-                linhas={[{ dataKey: "leitos_por_hospital", nome: "Leitos por hospital", cor: CORES.verde }]}
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Quanto um hospital desse tipo tem, em geral, no município. Para os totais e a sua participação, veja
-                &quot;Meu estabelecimento&quot;.
-              </p>
-            </Card>
-          )}
         </>
       )}
 

@@ -14,8 +14,8 @@ export default function LoginPage() {
   const router = useRouter();
 
   const [termo, setTermo] = useState("");
-  const [sugestoes, setSugestoes] = useState([]);
-  const [buscando, setBuscando] = useState(false);
+  // Resultado da última busca, guardado com o termo que o gerou: "buscando" = o termo atual ainda não respondeu.
+  const [resultado, setResultado] = useState({ termo: "", itens: [] });
   const [escolhido, setEscolhido] = useState(null); // { cnes, nome_fantasia }
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -31,37 +31,29 @@ export default function LoginPage() {
     }
   }, [router]);
 
+  const termoValido = termo.trim().length >= 2;
+  const buscando = termoValido && !escolhido && resultado.termo !== termo;
+  const sugestoes = termoValido && !escolhido && !buscando ? resultado.itens : [];
+
   useEffect(() => {
-    if (escolhido) return;
-
-    if (termo.trim().length < 2) {
-      setSugestoes([]);
-      setBuscando(false);
-      return;
-    }
-
-    setBuscando(true);
+    if (escolhido || !termoValido) return undefined;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const dados = await buscarEstabelecimentos(termo);
-        setSugestoes(dados);
+        setResultado({ termo, itens: await buscarEstabelecimentos(termo) });
       } catch (e) {
         console.error("Busca de estabelecimento falhou:", e);
-        setSugestoes([]);
-      } finally {
-        setBuscando(false);
+        setResultado({ termo, itens: [] });
       }
     }, 350);
 
     return () => clearTimeout(debounceRef.current);
-  }, [termo, escolhido]);
+  }, [termo, escolhido, termoValido]);
 
   function escolherEstabelecimento(item) {
     setEscolhido(item);
     setTermo(item.nome_fantasia);
-    setSugestoes([]);
     setErro("");
   }
 
