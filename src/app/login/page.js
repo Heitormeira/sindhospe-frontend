@@ -70,7 +70,7 @@ export default function LoginPage() {
 
     if (modoSindicato) {
       if (!senha) {
-        setErro("Digite a senha do SINDHOSPE.");
+        setErro("Digite a sua senha.");
         return;
       }
       setEnviando(true);
@@ -115,13 +115,13 @@ export default function LoginPage() {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-[2rem] sm:text-[2.5rem] leading-tight font-bold text-[#0b4a34] mb-2">Acesso do SINDHOSPE</h1>
+          <h1 className="text-[2rem] sm:text-[2.5rem] leading-tight font-bold text-[#0b4a34] mb-2">Acesso ao Portal Saúde PE</h1>
           <p className="text-lg text-[#4b5f57]">Painel consolidado de todos os associados, só para a equipe do sindicato.</p>
         </div>
         <form onSubmit={entrar} className="bg-white border border-[#e6f5ee] rounded-xl p-6 sm:p-8 space-y-6 shadow-sm">
           <div>
             <label htmlFor="campo-senha-sindicato" className="block text-lg font-bold text-[#0b4a34] mb-3">
-              Senha do SINDHOSPE
+              Senha
             </label>
             <input
               id="campo-senha-sindicato"
@@ -324,7 +324,7 @@ export default function LoginPage() {
       </form>
       <p className="text-center mt-5">
         <button type="button" onClick={alternarModo} className="text-base font-semibold text-[#0b4a34] underline min-h-[44px] px-2">
-          Acesso do SINDHOSPE (equipe do sindicato)
+          Acesso da equipe do sindicato
         </button>
       </p>
     </div>

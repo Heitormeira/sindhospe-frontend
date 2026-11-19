@@ -4,7 +4,7 @@ import { mesAno, mesAnoLongo } from "./formatos.mjs";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid, Legend } from "recharts";
 
 
-// Paleta extraída da logo do SINDHOSPE (Saúde+PE)
+// Paleta do Portal Saúde PE (verdes da saúde)
 export const CORES = {
   verdeEscuro: "#0b4a34",
   verde: "#159957",
