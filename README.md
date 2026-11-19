@@ -40,7 +40,7 @@ Repositório sindhospe-backend — lê o PostgreSQL (Neon) em modo somente leitu
 
 | Rota | Tela |
 |---|---|
-| `/login` | Acesso do associado (busca do estabelecimento pelo nome e senha) e link "Acesso do SINDHOSPE" para a conta do sindicato |
+| `/login` | Acesso do associado (busca do estabelecimento pelo nome e senha individual), orientação "Esqueci minha senha" e link "Acesso do SINDHOSPE" para a conta do sindicato |
 | `/dashboard` | **Meu estabelecimento:** conteúdo conforme o tipo. Hospital: leitos (total, gerais, complementares, SUS), raio-x por tipo e especialidade, participação no município e no estado. Clínica/diagnóstico: equipamentos, profissionais e serviços, comparados com o mesmo grupo (ex.: radiologia com radiologia) |
 | `/visao-geral` | **Meu setor:** o setor do associado em PE e entre os associados; tabela de todos os setores; representação do SINDHOSPE em leitos (associados com e sem leito) |
 | `/evolucao` | Série de leitos (total, SUS, não SUS, complementares); a última competência é o mesmo número do cartão |
@@ -89,11 +89,11 @@ Cada pasta dentro de `src/app` vira uma rota do site (roteamento do Next.js App 
 ## Segurança e privacidade
 
 - Cada associado tem **conta própria** no Firebase Auth, e as regras do Firestore só deixam ler a ficha do CNES da conta logada. Isso é verificado pelo Firebase, não pelo navegador.
-- A conta do sindicato (`sindicato@sindhospe.app`, senha própria, fora da senha de demonstração) é a única que lê o Painel SINDHOSPE e os pedidos de revisão.
+- A conta do sindicato (`sindicato@sindhospe.app`, senha própria) é a única que lê o Painel SINDHOSPE e os pedidos de revisão.
 - Profissionais aparecem só como contagens por ocupação: nenhum nome do CNES chega ao Firestore.
 - A busca do login devolve no máximo 8 nomes por consulta (limite imposto pelas regras) e nunca expõe CNPJ.
 - Dados de mercado e visão geral só para quem está logado.
-- **Limitação desta fase de demonstração:** todas as contas usam a mesma senha de demonstração. O modelo já é o de produção: basta definir uma senha por associado.
+- **Senha individual:** cada estabelecimento tem a própria senha, gerada pelo backend e entregue pelo SINDHOSPE. O associado (e o sindicato) troca a senha em **Perfil → Senha de acesso** (`trocar-senha.jsx`): a senha atual é confirmada antes (reautenticação) e a nova precisa ter 8+ caracteres, com letra e número (`senha.mjs`, testado em `senha.test.mjs`). Esqueceu a senha: o SINDHOSPE pede uma nova à equipe (`npm run senhas -- <CNES>` no backend).
 - O `firebaseConfig` (variáveis `NEXT_PUBLIC_FIREBASE_*`) não é segredo; ele só identifica o projeto.
 
 ## Como rodar localmente
@@ -107,8 +107,6 @@ NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=sindhospe-portal.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=sindhospe-portal
 NEXT_PUBLIC_FIREBASE_APP_ID=...
-# opcional: mostra a senha de demonstração na tela de login
-NEXT_PUBLIC_SENHA_DEMO_DICA=123456
 ```
 
 Os valores estão no console do Firebase, em Configurações do projeto → Seus apps.

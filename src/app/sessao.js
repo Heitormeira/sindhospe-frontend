@@ -4,7 +4,14 @@
 // - Login: e-mail {cnes}@sindhospe.app + senha; o CNES vem da claim do token.
 // - getSessao() é síncrono e só é confiável depois que o NavClient resolveu a
 //   sessão (ele só renderiza as páginas depois disso).
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+} from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { obterAuth, obterDb } from "./firebase";
 
@@ -86,4 +93,16 @@ async function entrarComEmail(email, senha) {
 export async function sair() {
   await signOut(obterAuth());
   publicar(null);
+}
+
+/**
+ * Troca a senha da conta logada. Confirma a senha atual antes (o Firebase exige
+ * login recente para trocar a senha e isso impede que alguém com o computador
+ * desbloqueado troque a senha de outra pessoa).
+ */
+export async function alterarSenha(senhaAtual, novaSenha) {
+  const usuario = obterAuth().currentUser;
+  if (!usuario?.email) throw Object.assign(new Error("Sessão expirada"), { code: "auth/requires-recent-login" });
+  await reauthenticateWithCredential(usuario, EmailAuthProvider.credential(usuario.email, senhaAtual));
+  await updatePassword(usuario, novaSenha);
 }
