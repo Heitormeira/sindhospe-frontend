@@ -3,6 +3,7 @@
 import { CORES, Card } from "../components";
 
 const ITENS = [
+  { titulo: "Nome e identidade", coluna: "done", nota: "Portal Saúde PE, projeto acadêmico da UNICAP, sem marca de terceiros." },
   { titulo: "Login do portal", coluna: "done", nota: "Uma conta por estabelecimento (Firebase Auth), senha individual entregue pelo SINDHOSPE e troca de senha no Perfil." },
   { titulo: "Meu estabelecimento", coluna: "done", nota: "Conteúdo por tipo: hospital vê leitos (LT do CNES); clínicas e diagnóstico veem equipamentos, profissionais e serviços. Comparação só com o mesmo tipo." },
   { titulo: "Perfil do estabelecimento", coluna: "done", nota: "Dados cadastrais, natureza jurídica, validade do cadastro (6 meses, Portaria SAS 118/2014), licença sanitária declarada e quem o estabelecimento atende." },

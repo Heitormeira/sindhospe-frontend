@@ -210,10 +210,14 @@ export default function NavClient({ children }) {
       <header className="bg-white border-b border-[#e6f5ee] shadow-sm">
         <div className="w-full px-4 sm:px-10 py-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <img src="/logo-sindhospe.png" alt="Logotipo do SINDHOSPE" className="h-16 sm:h-20 w-auto" />
-            <div className="hidden sm:block border-l-2 border-[#e6f5ee] pl-4">
-              <p className="text-[1.75rem] leading-[2.25rem] font-bold text-[#0b4a34]">Portal SINDHOSPE</p>
-              <p className="text-base text-[#4b5f57]">Inteligência de dados para sua instituição</p>
+            {/* Ícone neutro (cruz da saúde): o portal não usa marca de terceiros sem autorização. */}
+            <svg viewBox="0 0 48 48" aria-hidden="true" className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
+              <rect width="48" height="48" rx="12" fill="#0b4a34" />
+              <path d="M20 10h8v10h10v8H28v10h-8V28H10v-8h10z" fill="#e6f5ee" />
+            </svg>
+            <div className="border-l-2 border-[#e6f5ee] pl-4">
+              <p className="text-[1.5rem] sm:text-[1.75rem] leading-tight font-bold text-[#0b4a34]">Portal Saúde PE</p>
+              <p className="text-sm sm:text-base text-[#4b5f57]">Dados públicos de saúde de Pernambuco · projeto acadêmico UNICAP</p>
             </div>
           </div>
 
@@ -301,8 +305,8 @@ export default function NavClient({ children }) {
 
       <footer className="mt-12 border-t border-[#e6f5ee] bg-white">
         <div className="w-full px-4 sm:px-10 py-6 text-sm text-[#4b5f57] flex flex-wrap items-center justify-between gap-2">
-          <span>SINDHOSPE — Sindicato dos Hospitais e Estabelecimentos de Serviços de Saúde de Pernambuco</span>
-          <span>Projeto Integrador · UNICAP</span>
+          <span>Portal Saúde PE — projeto acadêmico do Projeto Integrador, Ciência da Computação, UNICAP</span>
+          <span>Dados públicos do CNES/DATASUS</span>
         </div>
       </footer>
     </>
