@@ -137,6 +137,7 @@ export default function PerfilPage() {
   const temDadosCnes = dados && dados.estrutura !== null;
   const est = dados?.atual?.estrutura;
   const hospital = Boolean(dados?.atual?.mostra_leitos);
+  const endereco = dados?.receita?.endereco || null;
   const simNao = (v) => (v ? "1" : "0");
 
   return (
@@ -183,21 +184,33 @@ export default function PerfilPage() {
           <CadastroCnes atual={dados.atual} />
           {dados.atual?.cadastro?.encontrado && <LicencaSanitaria atual={dados.atual} />}
           <QuemAtendeCard atual={dados.atual} />
+          <ReceitaCard receita={dados.receita} />
 
           <Card>
             <CardTitle>Localização</CardTitle>
-            {temDadosCnes ? (
+            {temDadosCnes || endereco ? (
               <ul className="divide-y divide-gray-100 text-sm">
-                <LinhaDado label="Município" valor={`${dados.atual?.municipio?.nome || dados.estrutura.municipio_nome}/PE`} />
-                <LinhaDado label="Endereço completo" valor="Não disponível nesta base" indisponivel />
-                <LinhaDado label="CEP" valor="Não disponível nesta base" indisponivel />
+                <LinhaDado label="Município" valor={`${endereco?.municipio || dados.atual?.municipio?.nome || dados.estrutura?.municipio_nome}/PE`} />
+                {endereco ? (
+                  <>
+                    <LinhaDado label="Endereço" valor={[endereco.logradouro, endereco.complemento].filter(Boolean).join(" · ")} />
+                    <LinhaDado label="Bairro" valor={endereco.bairro || "—"} />
+                    <LinhaDado label="CEP" valor={endereco.cep || "—"} />
+                  </>
+                ) : (
+                  <>
+                    <LinhaDado label="Endereço completo" valor="Não disponível nesta base" indisponivel />
+                    <LinhaDado label="CEP" valor="Não disponível nesta base" indisponivel />
+                  </>
+                )}
               </ul>
             ) : (
               <p className="text-sm text-gray-500">Não disponível — sem código CNES.</p>
             )}
             <p className="text-xs text-gray-400 mt-2">
-              O arquivo do CNES usado aqui traz só o código do município, não o endereço completo (rua/CEP) —
-              precisaria de uma fonte adicional para completar isso.
+              {endereco
+                ? `Endereço do cadastro do CNPJ na Receita Federal (dados abertos de ${mesAno(dados.receita.referencia)}).`
+                : "O cadastro do CNES traz só o município. O endereço completo vem da Receita Federal quando o estabelecimento tem CNPJ de empresa."}
             </p>
           </Card>
 
@@ -259,6 +272,48 @@ export default function PerfilPage() {
         </>
       )}
     </div>
+  );
+}
+
+// Dados abertos do CNPJ (Receita Federal): situação, abertura, porte e atividades. Sem dados de sócios (LGPD).
+function ReceitaCard({ receita }) {
+  const [agora] = useState(() => Date.now());
+  if (!receita) return null;
+  const abertura = receita.inicio_atividade;
+  const anos = abertura ? Math.floor((agora - new Date(`${abertura}T12:00:00`).getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
+  const corSituacao = receita.ativa ? CORES.verde : CORES.vermelho;
+  return (
+    <Card>
+      <CardTitle>Dados da Receita Federal</CardTitle>
+      <ul className="divide-y divide-gray-100 text-sm">
+        <LinhaDado label="CNPJ" valor={`${receita.cnpj}${receita.matriz ? " (matriz)" : " (filial)"}`} />
+        <li className="flex items-center justify-between py-2.5">
+          <span className="text-gray-500">Situação cadastral</span>
+          <span className="font-semibold text-right" style={{ color: corSituacao }}>
+            {receita.situacao}
+            {receita.data_situacao ? <span className="font-normal text-gray-500"> desde {dataBr(receita.data_situacao)}</span> : null}
+          </span>
+        </li>
+        <LinhaDado label="Abertura" valor={abertura ? `${dataBr(abertura)}${anos !== null ? ` (${anos} ${anos === 1 ? "ano" : "anos"})` : ""}` : "—"} />
+        <LinhaDado label="Porte" valor={receita.porte || "—"} />
+        <LinhaDado label="Atividade principal" valor={receita.atividade_principal ? receita.atividade_principal.label : "—"} />
+      </ul>
+      {receita.atividades_secundarias?.length > 0 && (
+        <details className="mt-2 text-sm">
+          <summary className="cursor-pointer text-gray-600">Atividades secundárias ({receita.atividades_secundarias.length})</summary>
+          <ul className="mt-1.5 space-y-1">
+            {receita.atividades_secundarias.map((a) => (
+              <li key={a.codigo} className="text-gray-800">• {a.label}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+        Dados abertos do CNPJ publicados pela Receita Federal ({mesAno(receita.referencia)}). Situação &quot;Ativa&quot; quer dizer
+        que a empresa está regular no cadastro; &quot;Inapta&quot;, &quot;Suspensa&quot; ou &quot;Baixada&quot; pedem atenção. O portal não
+        mostra dados de sócios.
+      </p>
+    </Card>
   );
 }
 
