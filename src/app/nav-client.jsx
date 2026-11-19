@@ -26,13 +26,15 @@ const PAGINAS_SO_ASSOCIADO = ["/dashboard", "/evolucao", "/relatorio", "/perfil"
 
 const ABAS_PROJETO = [
   { href: "/status", rotulo: "Status do projeto" },
-  { href: "/demonstracao", rotulo: "Demonstração" },
+  { href: "/demo", rotulo: "Demonstração" },
 ];
 
 // Páginas que podem ser vistas sem estar logado (ex: para apresentar o
 // projeto a alguém antes de ter uma senha). Os dados dos associados
 // continuam só para quem faz login.
-const PAGINAS_PUBLICAS = ["/login", "/status", "/demonstracao"];
+const PAGINAS_PUBLICAS = ["/login", "/status", "/demo"];
+// A demonstração (dados fictícios) tem subpáginas: todas são públicas.
+const ehPublica = (pathname) => PAGINAS_PUBLICAS.includes(pathname) || pathname.startsWith("/demo/");
 
 const ESCALAS_FONTE = [
   { rotulo: "A-", valor: "94%" },
@@ -61,7 +63,7 @@ export default function NavClient({ children }) {
 
   // Guarda de acesso: sem sessão, só as páginas públicas podem ser vistas.
   useEffect(() => {
-    if (!carregando && !sessao && !PAGINAS_PUBLICAS.includes(pathname)) {
+    if (!carregando && !sessao && !ehPublica(pathname)) {
       router.replace("/login");
     } else if (sessao?.perfil === "sindicato" && PAGINAS_SO_ASSOCIADO.includes(pathname)) {
       router.replace("/sindicato");
@@ -78,13 +80,15 @@ export default function NavClient({ children }) {
     document.documentElement.setAttribute("data-contraste", ativo ? "alto" : "normal");
   }, []);
 
-  // Recupera as preferências de acessibilidade salvas no navegador.
+  // Recupera as preferências de acessibilidade salvas no navegador. Precisa ser depois da
+  // hidratação (o servidor não tem localStorage), por isso o setState fica no efeito.
   useEffect(() => {
     try {
       const fonteSalva = localStorage.getItem("sindhospe_fonte") || "100%";
       const contrasteSalvo = localStorage.getItem("sindhospe_contraste") === "alto";
       aplicarFonte(fonteSalva);
       aplicarContraste(contrasteSalvo);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- leitura do localStorage após a hidratação
       setFonteAtual(fonteSalva);
       setContrasteAlto(contrasteSalvo);
     } catch {
@@ -118,7 +122,7 @@ export default function NavClient({ children }) {
     router.push("/login");
   }
 
-  const podeVerConteudo = Boolean(sessao) || PAGINAS_PUBLICAS.includes(pathname);
+  const podeVerConteudo = Boolean(sessao) || ehPublica(pathname);
   const inicial = sessao?.nome ? sessao.nome.trim().charAt(0).toUpperCase() : "?";
 
   return (

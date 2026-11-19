@@ -1,37 +1,84 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CORES, Card, CardTitle, Servico, getSessao } from "../components";
-import { getFichaCompleta, solicitarRevisao } from "../dados";
-import { mensagemAmigavel } from "../api-error";
-import { textoCadastro, dataBr, mesAno } from "../formatos.mjs";
+import { useState } from "react";
+import { CORES, Card, CardTitle, Servico } from "../components";
+import { solicitarRevisao } from "../dados";
+import { useFichaDaSessao } from "../usar-ficha";
+import { textoCadastro, dataBr, mesAno, mesAnoLongo, validadeCadastro } from "../formatos.mjs";
 import TrocarSenha from "../trocar-senha";
 
-const COR_TOM = { ok: CORES.verde, atencao: CORES.dourado, neutro: CORES.neutro };
+const COR_TOM = { ok: CORES.verde, atencao: CORES.dourado, erro: CORES.vermelho, neutro: CORES.neutro };
 
-// Situação do cadastro no CNES (reunião de 28/10, tarefa A5): data em que o próprio
-// estabelecimento atualizou a ficha, separada da competência mensal do sistema.
+// Validade do cadastro no CNES (reunião de 28/10, tarefa A5): data em que o próprio
+// estabelecimento atualizou a ficha, prazo de 6 meses (Portaria SAS/MS nº 118/2014) e
+// situação contada até HOJE, separada da competência dos dados do portal.
+const VALIDADE = {
+  em_dia: { rotulo: "Em dia", tom: "ok" },
+  vence_em_breve: { rotulo: "Vence em breve", tom: "atencao" },
+  vencido: { rotulo: "Vencido", tom: "erro" },
+  sem_data: { rotulo: "Sem data de atualização", tom: "atencao" },
+};
+
 function CadastroCnes({ atual }) {
-  const t = textoCadastro(atual?.cadastro);
-  const cor = COR_TOM[t.tom];
+  const cadastro = atual?.cadastro;
+  if (!cadastro?.encontrado) {
+    const t = textoCadastro(cadastro);
+    return (
+      <Card>
+        <CardTitle>Validade do cadastro no CNES</CardTitle>
+        <p className="text-sm text-gray-800">{t.rotulo}. {t.detalhe}</p>
+      </Card>
+    );
+  }
+  const v = validadeCadastro(cadastro.ultima_atualizacao);
+  const s = VALIDADE[v.situacao];
+  const cor = COR_TOM[s.tom];
+  const detalhe = {
+    em_dia: `O cadastro está dentro do prazo. A próxima atualização deve ser feita até ${mesAnoLongo(v.proxima)}.`,
+    vence_em_breve: `O prazo termina em ${mesAnoLongo(v.proxima)}. Vale atualizar o cadastro no CNES agora.`,
+    vencido: `O prazo terminou em ${mesAnoLongo(v.proxima)}. Atualize o cadastro no CNES o quanto antes.`,
+    sem_data: "O CNES não informa quando o cadastro foi atualizado.",
+  }[v.situacao];
   return (
     <Card>
-      <CardTitle>Situação do cadastro no CNES</CardTitle>
+      <CardTitle>Validade do cadastro no CNES</CardTitle>
       <div className="flex items-start gap-3 flex-wrap">
         <span className="text-sm font-bold px-3 py-1 rounded-md" style={{ background: `${cor}1f`, color: cor, border: `1px solid ${cor}` }}>
-          {t.rotulo}
+          {s.rotulo}
         </span>
-        <p className="text-sm text-gray-800 flex-1 min-w-[220px]">{t.detalhe}</p>
+        <p className="text-sm text-gray-800 flex-1 min-w-[220px]">{detalhe}</p>
       </div>
       <ul className="divide-y divide-gray-100 text-sm mt-3">
-        <LinhaDado label="Última atualização do cadastro" valor={mesAno(atual?.cadastro?.ultima_atualizacao)} />
-        <LinhaDado label="Competência do CNES usada no portal" valor={mesAno(atual?.competencia)} />
+        <LinhaDado label="Última atualização do cadastro no CNES" valor={mesAno(cadastro.ultima_atualizacao)} />
+        <LinhaDado label="Próxima atualização até" valor={v.proxima ? mesAno(v.proxima) : "—"} />
+        <LinhaDado label="Mês dos dados usados no portal" valor={mesAno(atual?.competencia)} />
       </ul>
-      <p className="text-xs text-gray-400 mt-2">
-        O sistema do CNES é publicado todo mês; a data acima é a última vez que o estabelecimento atualizou a própria
-        ficha. O portal considera &quot;em dia&quot; uma atualização feita nos últimos 6 meses. Quem atende planos de saúde
-        precisa manter o cadastro atualizado. Para corrigir, use o CNESWeb (Consultas → Estabelecimentos).
+      <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+        A Portaria SAS/MS nº 118/2014 pede que o estabelecimento atualize o cadastro no CNES pelo menos a cada 6 meses.
+        A &quot;última atualização&quot; é a data em que o próprio estabelecimento mexeu na ficha; o &quot;mês dos dados&quot; é
+        o arquivo do DATASUS que o portal está mostrando. Quem atende planos de saúde precisa manter o cadastro em dia. Para
+        atualizar, use o CNESWeb (Consultas → Estabelecimentos).
+      </p>
+    </Card>
+  );
+}
+
+// Quem o estabelecimento atende, como declarado no CNES (campos de atendimento prestado).
+function QuemAtendeCard({ atual }) {
+  const at = atual?.atendimento;
+  if (!at) return null;
+  return (
+    <Card>
+      <CardTitle>Quem o estabelecimento atende</CardTitle>
+      <ul className="divide-y divide-gray-100 text-sm">
+        <LinhaDado label="SUS" valor={at.sus ? "Sim" : "Não"} />
+        <LinhaDado label="Particular" valor={at.particular ? "Sim" : "Não"} />
+        <LinhaDado label="Planos de saúde e seguros" valor={at.planos ? "Sim" : "Não"} />
+        {at.turno && <LinhaDado label="Turno de atendimento" valor={at.turno} />}
+      </ul>
+      <p className="text-xs text-gray-500 mt-2">
+        Como o próprio estabelecimento declarou no CNES. Se estiver diferente da realidade (por exemplo, se atende planos e
+        aqui aparece &quot;Não&quot;), vale corrigir o cadastro.
       </p>
     </Card>
   );
@@ -65,32 +112,12 @@ function LicencaSanitaria({ atual }) {
 }
 
 export default function PerfilPage() {
-  const router = useRouter();
-  const [sessao, setSessao] = useState(null);
-  const [dados, setDados] = useState(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState("");
+  const { sessao, dados, erro: erroFicha, carregando } = useFichaDaSessao();
+  const [erroEnvio, setErroEnvio] = useState("");
+  const erro = erroFicha || erroEnvio;
   const [mensagemRevisao, setMensagemRevisao] = useState("");
   const [enviandoRevisao, setEnviandoRevisao] = useState(false);
   const [revisaoEnviada, setRevisaoEnviada] = useState(false);
-
-  useEffect(() => {
-    const s = getSessao();
-    if (!s) {
-      router.replace("/login");
-      return;
-    }
-    setSessao(s);
-  }, [router]);
-
-  useEffect(() => {
-    if (!sessao) return;
-    setCarregando(true);
-    getFichaCompleta(sessao.cnes)
-      .then((json) => setDados(json))
-      .catch((e) => setErro(mensagemAmigavel(e)))
-      .finally(() => setCarregando(false));
-  }, [sessao]);
 
   async function enviarRevisao(e) {
     e.preventDefault();
@@ -100,7 +127,7 @@ export default function PerfilPage() {
       setRevisaoEnviada(true);
     } catch (e) {
       console.error("Solicitação de revisão falhou:", e);
-      setErro("Não foi possível enviar a solicitação agora.");
+      setErroEnvio("Não foi possível enviar a solicitação agora.");
     } finally {
       setEnviandoRevisao(false);
     }
@@ -109,6 +136,7 @@ export default function PerfilPage() {
   if (!sessao) return null;
   const temDadosCnes = dados && dados.estrutura !== null;
   const est = dados?.atual?.estrutura;
+  const hospital = Boolean(dados?.atual?.mostra_leitos);
   const simNao = (v) => (v ? "1" : "0");
 
   return (
@@ -142,7 +170,7 @@ export default function PerfilPage() {
             {temDadosCnes ? (
               <ul className="divide-y divide-gray-100 text-sm">
                 <LinhaDado label="Tipo de estabelecimento" valor={dados.estrutura.tp_unid_label} />
-                <LinhaDado label="Natureza jurídica" valor={`Código ${dados.estrutura.nat_jur}`} />
+                <LinhaDado label="Natureza jurídica" valor={dados.estrutura.nat_jur_label || `Código ${dados.estrutura.nat_jur}`} />
                 <LinhaDado label="Código CNES" valor={dados.identidade.cnes} />
                 <LinhaDado label="CNPJ" valor={dados.identidade.cnpj} />
                 <LinhaDado label="Registro SINDHOSPE" valor={`nº ${dados.identidade.registro}`} />
@@ -154,6 +182,7 @@ export default function PerfilPage() {
 
           <CadastroCnes atual={dados.atual} />
           {dados.atual?.cadastro?.encontrado && <LicencaSanitaria atual={dados.atual} />}
+          <QuemAtendeCard atual={dados.atual} />
 
           <Card>
             <CardTitle>Localização</CardTitle>
@@ -176,9 +205,10 @@ export default function PerfilPage() {
             <Card>
               <CardTitle>Serviços habilitados</CardTitle>
               <ul className="divide-y divide-gray-100 text-sm">
-                <Servico nome="Urgência/Emergência" valor={simNao(est.urgencia)} cores={CORES} />
-                <Servico nome="Centro cirúrgico" valor={simNao(est.centro_cirurgico)} cores={CORES} />
-                <Servico nome="Centro obstétrico" valor={simNao(est.centro_obstetrico)} cores={CORES} />
+                {/* Centro cirúrgico, obstétrico e urgência só para hospital (ou quem tem): reunião de 28/10, item B5 */}
+                {(hospital || est.urgencia) && <Servico nome="Urgência/Emergência" valor={simNao(est.urgencia)} cores={CORES} />}
+                {(hospital || est.centro_cirurgico) && <Servico nome="Centro cirúrgico" valor={simNao(est.centro_cirurgico)} cores={CORES} />}
+                {(hospital || est.centro_obstetrico) && <Servico nome="Centro obstétrico" valor={simNao(est.centro_obstetrico)} cores={CORES} />}
                 <Servico nome="Atendimento ambulatorial" valor={simNao(est.ambulatorio)} cores={CORES} />
               </ul>
               <div className="mt-2 pt-2 border-t border-gray-100 text-sm">

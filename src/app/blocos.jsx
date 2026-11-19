@@ -120,10 +120,10 @@ export function Composicao({ titulo, fatias, nota }) {
 export function KpisLeitos({ leitos }) {
   return (
     <>
-      <Kpi rotulo="Leitos totais" valor={num(leitos.total)} cor={CORES.verdeEscuro} />
-      <Kpi rotulo="Leitos gerais" valor={num(leitos.gerais)} cor={CORES.verde} detalhe="internação" />
-      <Kpi rotulo="Complementares" valor={num(leitos.complementares)} cor={CORES.verde} detalhe="UTI e afins" />
-      <Kpi rotulo="Leitos SUS" valor={num(leitos.sus)} cor={CORES.dourado} detalhe={`não SUS: ${num(leitos.nao_sus)}`} />
+      <Kpi rotulo="Leitos totais" valor={num(leitos.total)} cor={CORES.verdeEscuro} detalhe="todos os leitos cadastrados no CNES" />
+      <Kpi rotulo="Leitos gerais" valor={num(leitos.gerais)} cor={CORES.verde} detalhe="internação: clínicos, cirúrgicos, obstétricos, pediátricos" />
+      <Kpi rotulo="Complementares" valor={num(leitos.complementares)} cor={CORES.verde} detalhe="UTI, UCI e isolamento: cuidado intensivo" />
+      <Kpi rotulo="Leitos SUS" valor={num(leitos.sus)} cor={CORES.dourado} detalhe={`ofertados ao SUS · não SUS: ${num(leitos.nao_sus)}`} />
     </>
   );
 }
@@ -143,7 +143,8 @@ export function RaioXLeitos({ leitos }) {
 }
 
 export function LeitosNoContexto({ leitos }) {
-  const { municipio, estado } = leitos.contexto;
+  const { municipio, estado, tipo } = leitos.contexto;
+  const grupo = tipo ? `${tipo} · ` : "";
   const linha = (rotulo, total, percentual) => (
     <div className="mb-4 last:mb-0">
       <div className="flex justify-between text-sm mb-1">
@@ -160,10 +161,14 @@ export function LeitosNoContexto({ leitos }) {
   return (
     <Painel
       titulo="Seus leitos no contexto"
-      nota="Totais de todos os estabelecimentos (associados ou não) na mesma competência do CNES, incluindo complementares."
+      nota={
+        tipo
+          ? `Soma dos leitos de todos os estabelecimentos do mesmo tipo (${tipo.toLowerCase()}), associados ou não, no mesmo mês do CNES, incluindo complementares. O percentual é a sua fatia desse total.`
+          : "Totais de todos os estabelecimentos (associados ou não) na mesma competência do CNES, incluindo complementares."
+      }
     >
-      {linha(municipio.nome, municipio.total, municipio.percentual)}
-      {linha("Pernambuco", estado.total, estado.percentual)}
+      {linha(`${grupo}${municipio.nome}`, municipio.total, municipio.percentual)}
+      {linha(`${grupo}Pernambuco`, estado.total, estado.percentual)}
     </Painel>
   );
 }
@@ -192,14 +197,15 @@ export function LeitosPorEspecialidade({ leitos }) {
   );
 }
 
-export function PerfilAtendimento({ estrutura }) {
+// Centro cirúrgico, obstétrico e urgência só aparecem para hospital ou para quem tem (reunião de 28/10, item B5).
+export function PerfilAtendimento({ estrutura, hospital = false }) {
   const itens = [
-    ["Vínculo com o SUS", estrutura.vinculo_sus],
-    ["Urgência/Emergência", estrutura.urgencia],
-    ["Centro cirúrgico", estrutura.centro_cirurgico],
-    ["Centro obstétrico", estrutura.centro_obstetrico],
-    ["Atendimento ambulatorial", estrutura.ambulatorio],
-  ];
+    ["Vínculo com o SUS", estrutura.vinculo_sus, true],
+    ["Urgência/Emergência", estrutura.urgencia, hospital],
+    ["Centro cirúrgico", estrutura.centro_cirurgico, hospital],
+    ["Centro obstétrico", estrutura.centro_obstetrico, hospital],
+    ["Atendimento ambulatorial", estrutura.ambulatorio, true],
+  ].filter(([, valor, sempre]) => sempre || valor);
   return (
     <Painel titulo="Perfil de atendimento">
       <ul className="divide-y" style={{ borderColor: "#e6f5ee" }}>
@@ -216,11 +222,47 @@ export function PerfilAtendimento({ estrutura }) {
   );
 }
 
+/** Quem o estabelecimento atende (SUS, particular, planos), por tipo de atendimento, como declarado no CNES. */
+export function QuemAtende({ atendimento }) {
+  if (!atendimento || !atendimento.tipos?.length) return null;
+  const marca = (v) => (v ? "✓" : "—");
+  const th = "text-left text-xs font-semibold px-2 py-1.5";
+  const td = "px-2 py-1.5 text-sm";
+  return (
+    <Painel
+      titulo="Quem o estabelecimento atende"
+      nota={`Como o próprio estabelecimento declarou no CNES.${atendimento.turno ? ` Turno: ${atendimento.turno.toLowerCase()}.` : ""} Se algo estiver diferente da realidade, vale corrigir o cadastro.`}
+    >
+      <table className="w-full">
+        <thead style={{ color: CORES.neutro, borderBottom: `1px solid ${CORES.verdeClaro}` }}>
+          <tr>
+            <th className={th}>Atendimento</th>
+            <th className={th}>SUS</th>
+            <th className={th}>Particular</th>
+            <th className={th}>Planos e seguros</th>
+          </tr>
+        </thead>
+        <tbody>
+          {atendimento.tipos.map((t) => (
+            <tr key={t.codigo} style={{ borderBottom: `1px solid ${CORES.verdeClaro}` }}>
+              <td className={`${td} text-gray-800`}>{t.label}</td>
+              <td className={td} style={{ color: t.sus ? CORES.verde : CORES.neutro }}>{marca(t.sus)}</td>
+              <td className={td} style={{ color: t.particular ? CORES.verde : CORES.neutro }}>{marca(t.particular)}</td>
+              <td className={td} style={{ color: t.planos ? CORES.verde : CORES.neutro }}>{marca(t.planos)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Painel>
+  );
+}
+
 export function NotaFonte({ atual }) {
   return (
     <p className="text-xs text-center mt-6 leading-relaxed" style={{ color: CORES.neutro }}>
-      Dados reais: identidade da base oficial do SINDHOSPE; estrutura, leitos, equipamentos e profissionais do
-      CNES/DATASUS, competência {mesAno(atual?.competencia)}.
+      Dados de {mesAno(atual?.competencia)}: identidade da base oficial do SINDHOSPE; estrutura, leitos, equipamentos e
+      profissionais do CNES/DATASUS. A &quot;competência&quot; é o mês de referência do arquivo que o DATASUS publica com o
+      cadastro de todos os estabelecimentos de saúde; o portal usa sempre o mesmo mês em todos os blocos.
     </p>
   );
 }

@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia, getSessao } from "../components";
-import { getFichaCompleta } from "../dados";
-import { mensagemAmigavel } from "../api-error";
+import { useMemo, useState } from "react";
+import { CORES, LinhaEvolucao, Card, CardTitle, formatCompetencia } from "../components";
+import { useFichaDaSessao } from "../usar-ficha";
 import { BarrasHorizontais, Equipamentos, Profissionais, NotaFonte } from "../blocos";
 import { num, pct, fraseComparacao } from "../formatos.mjs";
 
-// A série do CNES é trimestral: 6 meses = 3 pontos, 12 = 5, 24 = 9.
-const PONTOS_POR_JANELA = { 6: 3, 12: 5, 24: 9 };
+// A série do CNES é trimestral: 6 meses = 3 pontos, 12 = 5, 24 = 9, 5 anos = 21.
+const PONTOS_POR_JANELA = { 6: 3, 12: 5, 24: 9, 60: 21 };
 
 function variacao(serie, campo) {
   if (!serie || serie.length < 1) return { atual: 0, variacaoPct: 0, variacaoAbs: 0 };
@@ -35,7 +34,7 @@ function KpiVariacao({ rotulo, kpi }) {
 function SeletorJanela({ janela, setJanela }) {
   return (
     <div className="flex gap-1 rounded-lg p-1" style={{ background: CORES.verdeClaro }}>
-      {[6, 12, 24].map((j) => (
+      {[6, 12, 24, 60].map((j) => (
         <button
           key={j}
           type="button"
@@ -48,7 +47,7 @@ function SeletorJanela({ janela, setJanela }) {
             boxShadow: janela === j ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
           }}
         >
-          {j} meses
+          {j === 60 ? "5 anos" : `${j} meses`}
         </button>
       ))}
     </div>
@@ -112,7 +111,7 @@ function RelatorioLeitos({ a, janela, setJanela }) {
         <CardTitle>O que os números dizem</CardTitle>
         <ul className="text-sm space-y-3" style={{ color: CORES.verdeEscuro }}>
           <li>
-            💡 Na janela de {janela} meses, seus leitos {total.variacaoAbs > 0 ? "cresceram" : total.variacaoAbs < 0 ? "caíram" : "ficaram estáveis"}
+            💡 Na janela de {janela === 60 ? "5 anos" : `${janela} meses`}, seus leitos {total.variacaoAbs > 0 ? "cresceram" : total.variacaoAbs < 0 ? "caíram" : "ficaram estáveis"}
             {total.variacaoAbs !== 0 && (
               <>
                 {" "}
@@ -123,8 +122,8 @@ function RelatorioLeitos({ a, janela, setJanela }) {
           </li>
           <li>
             📍 Seus <strong>{num(l.total)}</strong> leitos são <strong>{pct(l.contexto.municipio.percentual)}</strong> dos{" "}
-            {num(l.contexto.municipio.total)} leitos de {l.contexto.municipio.nome} e{" "}
-            <strong>{pct(l.contexto.estado.percentual)}</strong> dos {num(l.contexto.estado.total)} de Pernambuco.
+            {num(l.contexto.municipio.total)} leitos {l.contexto.tipo ? <>de estabelecimentos do tipo &quot;{l.contexto.tipo.toLowerCase()}&quot; </> : ""}em {l.contexto.municipio.nome} e{" "}
+            <strong>{pct(l.contexto.estado.percentual)}</strong> dos {num(l.contexto.estado.total)} em Pernambuco.
           </li>
           <li>
             🏥 <strong>{num(l.complementares)}</strong> leitos complementares (UTI e afins), {pctComp}% do total: estrutura
@@ -141,28 +140,9 @@ function RelatorioLeitos({ a, janela, setJanela }) {
 }
 
 export default function RelatorioPage() {
-  const [sessao, setSessao] = useState(null);
-  const [dados, setDados] = useState(null);
-  const [janela, setJanela] = useState(24);
-  const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState("");
-
   // O relatório é sempre do estabelecimento logado.
-  useEffect(() => {
-    const s = getSessao();
-    if (s?.cnes) setSessao(s);
-    else setErro("Sessão não encontrada. Faça login novamente.");
-  }, []);
-
-  useEffect(() => {
-    if (!sessao) return;
-    setCarregando(true);
-    setErro("");
-    getFichaCompleta(sessao.cnes)
-      .then(setDados)
-      .catch((e) => setErro(mensagemAmigavel(e)))
-      .finally(() => setCarregando(false));
-  }, [sessao]);
+  const { sessao, dados, erro, carregando } = useFichaDaSessao({ redirecionar: false });
+  const [janela, setJanela] = useState(24);
 
   const a = dados?.atual;
 
